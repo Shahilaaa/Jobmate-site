@@ -1,0 +1,382 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobMate — Chat</title>
+  <link rel="stylesheet" href="{% static 'css/page-chat.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+
+<!-- ── App bar ── -->
+<div class="app-bar">
+  <button class="back-btn" onclick="history.back()">&#8592; Back</button>
+  <div>
+    {% if mode == 'employee' %}
+      <div class="bar-title">💬 Chat Inbox</div>
+      <div class="bar-sub">Your conversations with clients</div>
+    {% else %}
+      <div class="bar-title">Chat{% if employee %} with {{ employee.profile.user.get_full_name|default:employee.profile.user.username }}{% endif %}</div>
+      <div class="bar-sub">Send messages and files</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if mode == 'employee' %}
+<!-- ══════════════════════════════════════
+     EMPLOYEE MODE — sidebar + chat
+══════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <h2>Conversations</h2>
+    </div>
+    <div class="conv-list">
+      {% for conv in inbox %}
+        <a href="{% url 'employee_chat' conv.id %}"
+           class="conv-item {% if conversation and conversation.id == conv.id %}active{% endif %}">
+          <div class="conv-avatar">
+            {{ conv.client.profile.user.get_full_name|default:conv.client.profile.user.username|first|upper }}
+          </div>
+          <div class="conv-info">
+            <div class="conv-name">{{ conv.client.profile.user.get_full_name|default:conv.client.profile.user.username }}</div>
+            <div class="conv-sub">{{ conv.client.company|default:"Client" }}</div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="conv-empty">No conversations yet</div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="chat-main">
+    {% if conversation %}
+    <div class="chat-window">
+
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="header-avatar">
+          {{ conversation.client.profile.user.get_full_name|default:conversation.client.profile.user.username|first|upper }}
+        </div>
+        <div>
+          <div class="header-name">{{ conversation.client.profile.user.get_full_name|default:conversation.client.profile.user.username }}</div>
+          <div class="header-sub"><span class="online-dot"></span>Active now{% if conversation.client.company %} · {{ conversation.client.company }}{% endif %}</div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="msgs-wrap" id="msgWrap">
+        {% for m in messages %}
+          <div class="msg-row {% if m.sender_id == request.user.id %}me{% else %}them{% endif %}">
+            <div class="bubble">
+              {% if m.text %}{{ m.text }}{% endif %}
+              {% if m.attachment %}
+              <div class="msg-attach">
+                {% if m.is_image %}
+                  <img src="{{ m.attachment.url }}" class="attach-img" onclick="window.open('{{ m.attachment.url }}','_blank')" alt="image">
+                {% else %}
+                  <a href="{{ m.attachment.url }}" class="attach-file" download target="_blank">📎 {{ m.attachment_name }} <span style="opacity:.65;font-size:11px;">↓</span></a>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+            <div class="msg-time">{{ m.created_at|date:"j M, H:i" }}</div>
+          </div>
+        {% empty %}
+          <div class="empty-state"><div class="ei">💬</div><p>No messages yet</p><span>Start the conversation below</span></div>
+        {% endfor %}
+      </div>
+
+      <!-- Input -->
+      <div class="input-wrap">
+        <form method="post" enctype="multipart/form-data" action="{% url 'employee_chat' conversation.id %}" id="chatForm">
+          {% csrf_token %}
+          <div class="attach-preview" id="attachPreview">
+            📎&nbsp;<img src="" id="previewImg" class="preview-thumb" style="display:none">
+            <span class="preview-name" id="previewName"></span>
+            <button type="button" class="preview-rm" onclick="clearAttach()">×</button>
+          </div>
+          <div class="input-row">
+            <label class="clip-btn" title="Attach file or image">
+              📎<input type="file" name="attachment" id="attachInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.csv" onchange="handleAttach(this)">
+            </label>
+            <div style="flex:1;">{{ form.text }}</div>
+            <button type="button" class="send-btn" onclick="submitChat()" title="Send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+    {% else %}
+    <div class="no-conv">
+      <div class="ei">💬</div>
+      <p>Select a conversation</p>
+      <span>Choose a client from the left to start chatting</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+<!-- ══════════════════════════════════════
+     CLIENT MODE — single chat
+══════════════════════════════════════ -->
+<div class="client-layout">
+  <div class="chat-window">
+
+    <!-- Header -->
+    <div class="chat-header">
+      {% if employee %}
+      <div class="header-avatar">
+        {% if employee.profile_image %}<img src="{{ employee.profile_image.url }}" alt="">{% else %}{{ employee.profile.user.first_name|first|upper|default:"E" }}{% endif %}
+      </div>
+      <div>
+        <div class="header-name">{{ employee.profile.user.get_full_name|default:employee.profile.user.username }}</div>
+        <div class="header-sub">
+          <span class="online-dot"></span>Active now
+          {% if employee.title %} · {{ employee.title }}{% endif %}
+          {% if employee.department %} · {{ employee.department.name }}{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Messages -->
+    <div class="msgs-wrap" id="msgWrap">
+      {% for m in messages %}
+        <div class="msg-row {% if m.sender_id == request.user.id %}me{% else %}them{% endif %}">
+          <div class="bubble">
+            {% if m.text %}{{ m.text }}{% endif %}
+            {% if m.attachment %}
+            <div class="msg-attach">
+              {% if m.is_image %}
+                <img src="{{ m.attachment.url }}" class="attach-img" onclick="window.open('{{ m.attachment.url }}','_blank')" alt="image">
+              {% else %}
+                <a href="{{ m.attachment.url }}" class="attach-file" download target="_blank">📎 {{ m.attachment_name }} <span style="opacity:.65;font-size:11px;">↓</span></a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="msg-time">{{ m.created_at|date:"j M, H:i" }}</div>
+        </div>
+      {% empty %}
+        <div class="empty-state"><div class="ei">💬</div><p>No messages yet. Say hello!</p></div>
+      {% endfor %}
+    </div>
+
+    <!-- Input -->
+    <div class="input-wrap">
+      <form method="post" enctype="multipart/form-data" id="chatForm">
+        {% csrf_token %}
+        <div class="attach-preview" id="attachPreview">
+          📎&nbsp;<img src="" id="previewImg" class="preview-thumb" style="display:none">
+          <span class="preview-name" id="previewName"></span>
+          <button type="button" class="preview-rm" onclick="clearAttach()">×</button>
+        </div>
+        <div class="input-row">
+          <label class="clip-btn" title="Attach file or image">
+            📎<input type="file" name="attachment" id="attachInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.csv" onchange="handleAttach(this)">
+          </label>
+          <div style="flex:1;">{{ form.text }}</div>
+          <button type="button" class="send-btn" onclick="submitChat()" title="Send">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+<script>
+  // Apply input styling to Django-rendered textarea
+  (function(){
+    var ta = document.getElementById('chatTextInput');
+    if (ta) ta.className = 'txt-box';
+  })();
+
+  // Scroll to bottom on load
+  (function(){
+    var w = document.getElementById('msgWrap');
+    if (w) w.scrollTop = w.scrollHeight;
+  })();
+
+  // Attachment preview
+  function handleAttach(input) {
+    if (!input.files || !input.files[0]) return;
+    var f = input.files[0];
+    document.getElementById('previewName').textContent = f.name;
+    document.getElementById('attachPreview').classList.add('show');
+    var img = document.getElementById('previewImg');
+    if (f.type.startsWith('image/')) {
+      var r = new FileReader();
+      r.onload = function(e) { img.src = e.target.result; img.style.display = 'block'; };
+      r.readAsDataURL(f);
+    } else {
+      img.style.display = 'none';
+    }
+  }
+
+  function clearAttach() {
+    document.getElementById('attachInput').value = '';
+    document.getElementById('attachPreview').classList.remove('show');
+    document.getElementById('previewImg').style.display = 'none';
+    document.getElementById('previewName').textContent = '';
+  }
+
+  function submitChat() {
+    var txt = document.getElementById('chatTextInput');
+    var att = document.getElementById('attachInput');
+    if ((!txt || !txt.value.trim()) && (!att || !att.files || !att.files.length)) {
+      if (txt) txt.focus();
+      return;
+    }
+    document.getElementById('chatForm').submit();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var ta = document.getElementById('chatTextInput');
+    if (ta) {
+      ta.className = 'txt-box';
+      ta.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitChat(); }
+      });
+      ta.addEventListener('input', function() {
+        this.style.height = '';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+    }
+  });
+</script>
+
+<!-- ══ JobMate AI Chatbot ══ -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI" style="position:fixed;">🤖<div id="jmDot" style="display:none;">1</div></button>
+<div id="jmBox">
+  <div id="jmHead">
+    <div class="av">🤖</div>
+    <div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online — Ask me anything</div></div>
+    <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+  </div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips">
+    <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+    <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+    <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+    <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+  </div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo" title="Send">&#10148;</button></div>
+</div>
+<script>
+(function(){
+  var hist=[],open=false;
+  function ts(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function bubble(txt,mine){
+    var msgs=document.getElementById('jmMsgs');
+    var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');
+    if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}
+    var inner=document.createElement('div');
+    var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+    var t=document.createElement('div');t.className='jmT';t.textContent=ts();
+    inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+  }
+  function typing(show){document.getElementById('jmTyping').style.display=show?'flex':'none';if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}}
+  window.jmOpen=function(){
+    open=!open;
+    document.getElementById('jmBox').classList.toggle('on',open);
+    var btn=document.getElementById('jmBtn');
+    btn.innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+    if(open&&!document.getElementById('jmMsgs').children.length){bubble('Hi! I\'m the JobMate AI assistant. Ask me anything about finding employees, tasks, payments, or chat.',false);}
+    if(open){setTimeout(function(){var i=document.getElementById('jmInp');if(i)i.focus();},200);}
+  };
+  window.jmAsk=function(txt){document.getElementById('jmChips').style.display='none';document.getElementById('jmInp').value=txt;jmSend();};
+  function jmSend(){
+    var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;
+    inp.value='';inp.style.height='';document.getElementById('jmChips').style.display='none';
+    bubble(msg,true);hist.push({role:'user',content:msg});typing(true);
+    fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})})
+    .then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(function(d){typing(false);bubble(d.reply||'Sorry, no response.',false);hist.push({role:'assistant',content:d.reply||''}); })
+    .catch(function(){typing(false);bubble('Sorry, could not connect.',false);});
+  }
+  document.getElementById('jmGo').addEventListener('click',jmSend);
+  document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});
+  document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});
+  setTimeout(function(){if(!open){var d=document.getElementById('jmDot');if(d){d.style.display='flex';}}},4000);
+})();
+</script>
+<!-- ══ End JobMate AI Chatbot ══ -->
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 96px;
+        right: 28px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content: ''; position: absolute; inset: -4px; border-radius: 50%;
+        border: 2px solid rgba(144,202,249,0.45);
+        animation: stPulse 2.5s ease-in-out infinite; pointer-events: none;
+    }
+    @keyframes stPulse {
+        0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.35);opacity:0;}
+    }
+    </style>
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+</body>
+</html>

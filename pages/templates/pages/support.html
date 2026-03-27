@@ -1,0 +1,385 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support — JobMate</title>    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page-support.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+    <!-- ══ Sidebar ══ -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile-mini">
+            <div class="user-info">
+                <div class="user-avatar-mini" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                    {% if current_user_avatar_url %}
+                        <img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                    {% else %}
+                        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-weight:700;font-size:13px;">{{ request.user.first_name|first|default:"U" }}</span>
+                    {% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span style="color:var(--c-tm);font-size:14px;cursor:pointer;">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'client_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'myprofile' %}"><span class="nav-icon">👤</span> My Profile</a></li>
+            <li><a href="{% url 'works' %}"><span class="nav-icon">💼</span> Works</a></li>
+            <li><a href="{% url 'employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+            <li><a href="{% url 'payments' %}"><span class="nav-icon">💳</span> Payments</a></li>
+            <li><a href="{% url 'support' %}" class="active"><span class="nav-icon">🎧</span> Support</a></li>
+            <li><a href="{% url 'notifications' %}"><span class="nav-icon">🔔</span> Notifications{% with cnt=unread_notifications %}{% if cnt %}<span class="nav-notif-badge">{% if cnt > 99 %}99+{% else %}{{ cnt }}{% endif %}</span>{% endif %}{% endwith %}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- ══ Main ══ -->
+    <main class="main-content">
+
+        <!-- ── Hero Banner ── -->
+        <div class="sph-wrap">
+            <div class="sph-left">
+                <div class="sph-badge">
+                    <span class="sph-dot"></span>
+                    Support is live
+                </div>
+                <h1 class="sph-title">How can we help?</h1>
+                <p class="sph-sub">Search our knowledge base or submit a ticket — we reply within 24 hours.</p>
+                <form method="get" action="" data-nlp-search="support" class="sph-search">
+                    <span class="sph-search-ico">🔍</span>
+                    <input type="text" class="sph-search-inp" placeholder="Search tickets &amp; FAQs…" name="q" value="{{ request.GET.q|default:'' }}">
+                    <button type="submit" class="sph-search-btn">Search</button>
+                </form>
+            </div>
+            <div class="sph-stats">
+                <div class="sph-stat"><span class="sph-stat-n">24h</span><span class="sph-stat-l">Response time</span></div>
+                <div class="sph-stat"><span class="sph-stat-n">98%</span><span class="sph-stat-l">Resolution rate</span></div>
+                <div class="sph-stat"><span class="sph-stat-n">24/7</span><span class="sph-stat-l">Always available</span></div>
+            </div>
+            {% include 'pages/includes/notif_icon.html' %}
+        </div>
+
+        {% if q %}<div class="nlp-result-banner"><span>🤖 AI Search: <strong>{{ q }}</strong></span><a href="?" class="nlp-clear-btn">✕ Clear</a></div>{% endif %}
+
+        <!-- ── Info Cards ── -->
+        <div class="spc-row">
+            {% if support_cards %}
+                {% for card in support_cards %}
+                <div class="spc-card spc-card-{{ forloop.counter }}">
+                    <div class="spc-ico">{% if forloop.counter == 1 %}📚{% elif forloop.counter == 2 %}💬{% else %}🔧{% endif %}</div>
+                    <h3 class="spc-title">{{ card.title }}</h3>
+                    <p class="spc-body">{{ card.body }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="spc-card spc-card-1">
+                    <div class="spc-ico">📚</div>
+                    <h3 class="spc-title">Knowledge Base</h3>
+                    <p class="spc-body">Browse our help articles and guides for quick answers to common questions.</p>
+                </div>
+                <div class="spc-card spc-card-2">
+                    <div class="spc-ico">💬</div>
+                    <h3 class="spc-title">Live Chat</h3>
+                    <p class="spc-body">Chat with our AI assistant anytime using the chatbot at the bottom right.</p>
+                </div>
+                <div class="spc-card spc-card-3">
+                    <div class="spc-ico">🔧</div>
+                    <h3 class="spc-title">Submit a Ticket</h3>
+                    <p class="spc-body">Can't find your answer? Our team will respond within 24 hours.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ── Two-column: Form + Tickets ── -->
+        <div class="spg-row">
+
+            <!-- LEFT: Submit Ticket -->
+            <div class="spg-panel">
+                <div class="spg-head">
+                    <div class="spg-head-ico">✉️</div>
+                    <div>
+                        <h2 class="spg-head-title">New Support Ticket</h2>
+                        <p class="spg-head-sub">Fill in the form — we reply within 24 hours</p>
+                    </div>
+                </div>
+
+                <div id="sp-alert" class="sp-alert" style="display:none;"></div>
+
+                <div class="spf-group" id="fg-subject">
+                    <label class="spf-label">Subject <span class="spf-req">*</span></label>
+                    <input id="sp-subject" type="text" class="spf-input" placeholder="Brief description of your issue…" maxlength="160">
+                    <div class="spf-count"><span id="sp-subject-count">0</span> / 160</div>
+                </div>
+                <div class="spf-group" id="fg-message">
+                    <label class="spf-label">Message <span class="spf-req">*</span></label>
+                    <textarea id="sp-message" class="spf-textarea" rows="5" placeholder="Describe your issue in detail… (Ctrl+Enter to send)"></textarea>
+                    <div class="spf-count"><span id="sp-message-count">0</span> characters</div>
+                </div>
+                <button id="sp-submit-btn" class="spf-submit" onclick="submitTicket()">
+                    <span id="sp-btn-text">✉ Send Ticket</span>
+                    <span id="sp-btn-spin" style="display:none;">⏳ Sending…</span>
+                </button>
+                <div class="spf-status">
+                    <span class="spf-status-dot"></span>
+                    <span class="spf-status-txt">Support team online</span>
+                    <span class="spf-status-time" id="sp-last-refresh"></span>
+                </div>
+            </div>
+
+            <!-- RIGHT: My Tickets -->
+            <div class="spg-panel">
+                <div class="spg-head">
+                    <div class="spg-head-ico">🎫</div>
+                    <div style="flex:1;">
+                        <h2 class="spg-head-title">My Tickets</h2>
+                        <p class="spg-head-sub">Auto-refreshes every 30 seconds</p>
+                    </div>
+                    <button class="spt-refresh" id="sp-refresh-btn" onclick="loadTickets(true)" title="Refresh">↻</button>
+                </div>
+                <div class="spt-tabs">
+                    <button class="spt-tab active" data-filter="all">All <span class="spt-cnt" id="cnt-all">—</span></button>
+                    <button class="spt-tab" data-filter="open">Open <span class="spt-cnt" id="cnt-open">—</span></button>
+                    <button class="spt-tab" data-filter="in_progress">In Progress <span class="spt-cnt" id="cnt-in_progress">—</span></button>
+                    <button class="spt-tab" data-filter="closed">Closed <span class="spt-cnt" id="cnt-closed">—</span></button>
+                </div>
+                <div id="sp-tickets-list" class="spt-list">
+                    <div class="spt-loading"><div class="spt-spinner"></div><span>Loading tickets…</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── FAQ ── -->
+        {% if faqs %}
+        <div class="spq-wrap">
+            <div class="spq-head">
+                <h2 class="spq-title">Frequently Asked Questions</h2>
+                <p class="spq-sub">Click any question to expand the answer</p>
+            </div>
+            <div class="spq-list">
+                {% for faq in faqs %}
+                <div class="spq-item" id="faq-{{ forloop.counter }}">
+                    <button class="spq-q" onclick="toggleFAQ('faq-{{ forloop.counter }}')">
+                        <span class="spq-num">{{ forloop.counter|stringformat:"02d" }}</span>
+                        <span class="spq-qtext">{{ faq.question }}</span>
+                        <span class="spq-ico">+</span>
+                    </button>
+                    <div class="spq-ans">
+                        <div class="spq-ans-inner">{{ faq.answer }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+
+<!-- Chatbot -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">🤖<div id="jmDot">1</div></button>
+<div id="jmBox">
+  <div id="jmHead"><div class="av">🤖</div><div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online</div></div><button id="jmX" onclick="jmOpen()" title="Close">✕</button></div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips"><button class="jmC" onclick="jmAsk('How do I submit a ticket?')">Submit ticket</button><button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button><button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button></div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo" title="Send">&#10148;</button></div>
+</div>
+<script>
+(function(){var hist=[],open=false;function hm(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}function bubble(txt,mine){var m=document.getElementById('jmMsgs');var w=document.createElement('div');w.className='jmRow'+(mine?' me':'');if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';w.appendChild(a);}var i=document.createElement('div');var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;var t=document.createElement('div');t.className='jmT';t.textContent=hm();i.appendChild(b);i.appendChild(t);w.appendChild(i);m.appendChild(w);m.scrollTop=m.scrollHeight;}function typing(s){document.getElementById('jmTyping').style.display=s?'flex':'none';}window.jmOpen=function(){open=!open;document.getElementById('jmBox').classList.toggle('on',open);if(open&&!document.getElementById('jmMsgs').children.length){bubble('Hi! I am the JobMate AI assistant. How can I help you today?',false);}};window.jmAsk=function(t){document.getElementById('jmChips').style.display='none';document.getElementById('jmInp').value=t;jmSend();};function jmSend(){var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='';document.getElementById('jmChips').style.display='none';bubble(msg,true);hist.push({role:'user',content:msg});typing(true);fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(d){typing(false);bubble(d.reply||'Sorry.',false);hist.push({role:'assistant',content:d.reply||''});}).catch(function(){typing(false);bubble('Sorry, could not connect.',false);});}document.getElementById('jmGo').addEventListener('click',jmSend);document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});setTimeout(function(){if(!open){var d=document.getElementById('jmDot');if(d)d.style.display='flex';}},4000);})();
+</script>
+<script>
+var CSRF='{{ csrf_token }}';
+var SUBMIT_URL='{% url "support_submit_ticket" %}';
+var TICKETS_URL='{% url "support_tickets_json" %}';
+var allTickets=[],activeFilter='all';
+
+document.getElementById('sp-subject').addEventListener('input',function(){document.getElementById('sp-subject-count').textContent=this.value.length;});
+document.getElementById('sp-message').addEventListener('input',function(){document.getElementById('sp-message-count').textContent=this.value.length;});
+
+['fg-subject','fg-message'].forEach(function(id){
+    var fg=document.getElementById(id);var inp=fg.querySelector('input,textarea');
+    inp.addEventListener('focus',function(){fg.classList.add('focused');});
+    inp.addEventListener('blur',function(){fg.classList.remove('focused');});
+});
+
+function submitTicket(){
+    var subject=document.getElementById('sp-subject').value.trim();
+    var message=document.getElementById('sp-message').value.trim();
+    if(!subject){showAlert('error','⚠️ Subject is required.');shake('sp-subject');return;}
+    if(!message){showAlert('error','⚠️ Message is required.');shake('sp-message');return;}
+    var btn=document.getElementById('sp-submit-btn');
+    document.getElementById('sp-btn-text').style.display='none';
+    document.getElementById('sp-btn-spin').style.display='inline';
+    btn.disabled=true;
+    var fd=new FormData();fd.append('subject',subject);fd.append('message',message);fd.append('csrfmiddlewaretoken',CSRF);
+    fetch(SUBMIT_URL,{method:'POST',body:fd,credentials:'same-origin'})
+    .then(function(r){
+        if(!r.ok){return r.text().then(function(t){throw new Error('Server error '+r.status+': '+t.substring(0,120));});}
+        return r.json();
+    }).then(function(d){
+        document.getElementById('sp-btn-text').style.display='inline';
+        document.getElementById('sp-btn-spin').style.display='none';btn.disabled=false;
+        if(d.ok){
+            showAlert('success','✅ Ticket submitted! We\'ll reply within 24 hours.');
+            document.getElementById('sp-subject').value='';document.getElementById('sp-message').value='';
+            document.getElementById('sp-subject-count').textContent='0';document.getElementById('sp-message-count').textContent='0';
+            allTickets.unshift(d.ticket);renderTickets();updateCounts();setFilter('all');
+        } else {showAlert('error','❌ '+(d.error||'Something went wrong.'));}
+    }).catch(function(err){
+        document.getElementById('sp-btn-text').style.display='inline';
+        document.getElementById('sp-btn-spin').style.display='none';btn.disabled=false;
+        showAlert('error','❌ Submit failed. Please try again.');
+        console.error('Ticket submit error:',err);
+    });
+}
+
+function shake(id){var el=document.getElementById(id);el.classList.add('sp-shake');setTimeout(function(){el.classList.remove('sp-shake');},500);}
+
+function showAlert(type,msg){
+    var el=document.getElementById('sp-alert');
+    el.className='sp-alert sp-alert-'+type;el.textContent=msg;el.style.display='block';
+    if(type==='success'){setTimeout(function(){el.style.display='none';},5000);}
+}
+
+function loadTickets(manual){
+    if(manual){document.getElementById('sp-refresh-btn').classList.add('spt-spinning');}
+    fetch(TICKETS_URL,{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        allTickets=d.tickets||[];renderTickets();updateCounts();
+        var now=new Date();
+        document.getElementById('sp-last-refresh').textContent='Updated '+('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+        if(manual){var btn=document.getElementById('sp-refresh-btn');btn.classList.remove('spt-spinning');btn.textContent='✓';setTimeout(function(){btn.textContent='↻';},1200);}
+    }).catch(function(){if(manual)document.getElementById('sp-refresh-btn').classList.remove('spt-spinning');});
+}
+
+function updateCounts(){
+    var c={all:allTickets.length,open:0,in_progress:0,closed:0};
+    allTickets.forEach(function(t){if(c[t.status]!==undefined)c[t.status]++;});
+    ['all','open','in_progress','closed'].forEach(function(k){var el=document.getElementById('cnt-'+k);if(el)el.textContent=c[k]||'0';});
+}
+
+function renderTickets(){
+    var list=document.getElementById('sp-tickets-list');
+    var filtered=activeFilter==='all'?allTickets:allTickets.filter(function(t){return t.status===activeFilter;});
+    if(!filtered.length){
+        list.innerHTML='<div class="spt-empty"><div class="spt-empty-ico">🎫</div><p>'+(activeFilter==='all'?'No tickets yet. Submit one!':'No '+activeFilter.replace('_',' ')+' tickets.')+'</p></div>';
+        return;
+    }
+    var meta={open:{cls:'spt-open',lbl:'Open'},in_progress:{cls:'spt-prog',lbl:'In Progress'},closed:{cls:'spt-closed',lbl:'Closed'}};
+    list.innerHTML=filtered.map(function(t,i){
+        var m=meta[t.status]||meta.open;
+        return '<div class="spt-card" style="animation-delay:'+(i*.06)+'s">'
+            +'<div class="spt-card-top"><span class="spt-card-subj">'+escHtml(t.subject)+'</span><span class="spt-badge '+m.cls+'">'+m.lbl+'</span></div>'
+            +'<p class="spt-card-msg">'+escHtml(t.message)+'</p>'
+            +'<div class="spt-card-foot"><span>🗓 '+t.created_at+'</span><span class="spt-card-id">#'+t.id+'</span></div>'
+            +'</div>';
+    }).join('');
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function setFilter(f){
+    activeFilter=f;
+    document.querySelectorAll('.spt-tab').forEach(function(b){b.classList.remove('active');});
+    document.querySelector('.spt-tab[data-filter="'+f+'"]').classList.add('active');
+    renderTickets();
+}
+document.querySelectorAll('.spt-tab').forEach(function(btn){btn.addEventListener('click',function(){setFilter(btn.dataset.filter);});});
+
+window.toggleFAQ=function(id){
+    var item=document.getElementById(id);if(!item)return;
+    var wasOpen=item.classList.contains('spq-open');
+    document.querySelectorAll('.spq-item').forEach(function(el){el.classList.remove('spq-open');});
+    if(!wasOpen)item.classList.add('spq-open');
+};
+
+document.addEventListener('DOMContentLoaded',function(){
+    loadTickets(false);
+    setInterval(function(){loadTickets(false);},30000);
+    var first=document.querySelector('.spq-item');if(first)first.classList.add('spq-open');
+    // pulse live dot
+    var dot=document.querySelector('.sph-dot');
+    if(dot)setInterval(function(){dot.style.transform='scale(1.8)';setTimeout(function(){dot.style.transform='scale(1)';},300);},2500);
+});
+
+document.getElementById('sp-message').addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();submitTicket();}
+});
+</script>
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 96px;
+        right: 28px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content: ''; position: absolute; inset: -4px; border-radius: 50%;
+        border: 2px solid rgba(144,202,249,0.45);
+        animation: stPulse 2.5s ease-in-out infinite; pointer-events: none;
+    }
+    @keyframes stPulse {
+        0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.35);opacity:0;}
+    }
+    </style>
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

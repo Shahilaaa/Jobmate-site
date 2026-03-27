@@ -1,0 +1,652 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Detail - JobMate</title>    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/page-worksinner.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile-mini">
+            <div class="user-info">
+                <div class="user-avatar-mini" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                    {% if current_user_avatar_url %}
+                        <img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                    {% else %}
+                        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-weight:700;">{{ request.user.first_name|first|default:"U" }}</span>
+                    {% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span style="color:var(--c-tm);font-size:14px;">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'client_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'myprofile' %}"><span class="nav-icon">👤</span> My Profile</a></li>
+            <li><a href="{% url 'works' %}" class="active"><span class="nav-icon">💼</span> Works</a></li>
+            <li><a href="{% url 'employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+            <li><a href="{% url 'payments' %}"><span class="nav-icon">💳</span> Payments</a></li>
+            <li><a href="{% url 'support' %}"><span class="nav-icon">⚙️</span> Support</a></li>
+            <li><a href="{% url 'notifications' %}"><span class="nav-icon">🔔</span> Notifications{% with cnt=unread_notifications %}{% if cnt %}<span class="nav-notif-badge">{% if cnt > 99 %}99+{% else %}{{ cnt }}{% endif %}</span>{% endif %}{% endwith %}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1 class="page-title">Work Detail</h1>
+            <div class="header-actions">
+                <div class="search-box">
+                    <form method="get" action="/user_app/works/" data-nlp-search="works" style="display:flex;width:100%;position:relative;">
+                        
+                        <input type="text" class="search-input" placeholder="Search your tasks..." name="q" value="{{ request.GET.q|default:'' }}">
+                        <button type="submit" class="nlp-submit-btn" title="Search">🔍</button>
+                    </form>
+                </div>
+                {% include 'pages/includes/notif_icon.html' %}
+            </div>
+        </div>
+        {% if messages %}{% for msg in messages %}
+        <div class="{% if msg.tags == 'success' %}msg-success{% else %}msg-error{% endif %}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+<!-- Main Content -->
+    <div class="task-detail-wrapper">
+        <div class="container">
+            <a href="{% url 'works' %}" class="back-link">← Back to all Tasks</a>
+            
+            <div class="task-detail-grid">
+                <!-- Main Content -->
+                <div class="task-main">
+                    <h1 class="task-title">{% if task %}{{ task.title }}{% else %}No task selected{% endif %}</h1>
+                    <p class="task-subtitle">{% if task %}{{ task.status|capfirst }} • Budget ₹{{ task.budget }}{% endif %}</p>
+
+                    <!-- Tabs -->
+                    <div class="task-tabs">
+                        <button class="task-tab active">Feed</button>
+                        <button class="task-tab">Standup</button>
+                        <button class="task-tab">Completed</button>
+                    </div>
+
+                    <!-- Editor Toolbar -->
+                    <div class="editor-toolbar">
+                        <button class="toolbar-btn">↶</button>
+                        <button class="toolbar-btn">↷</button>
+                        <button class="toolbar-btn">Normal text ▾</button>
+                        <button class="toolbar-btn">≡ ▾</button>
+                        <button class="toolbar-btn">⬛ ▾</button>
+                        <div class="toolbar-divider"></div>
+                        <button class="toolbar-btn"><strong>B</strong></button>
+                        <button class="toolbar-btn"><em>I</em></button>
+                        <button class="toolbar-btn"><u>U</u></button>
+                        <button class="toolbar-btn">S</button>
+                        <button class="toolbar-btn">+</button>
+                        <button class="toolbar-btn">⚙</button>
+                        <button class="toolbar-btn">• •</button>
+                        <button class="toolbar-btn">1. 2.</button>
+                        <button class="toolbar-btn">🔗</button>
+                        <button class="toolbar-btn">🖼</button>
+                        <button class="toolbar-btn">🎬</button>
+                        <button class="toolbar-btn">""</button>
+                        <button class="toolbar-btn">—</button>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="content-area">
+                        <div class="quote-box">
+                            Nothing is impossible, the word itself says "I'm possible!"
+                        </div>
+
+                        <p class="content-text">{% if task %}{{ task.description }}{% endif %}</p>
+
+                        <!-- Flash Messages -->
+                        {% if messages %}
+                        {% for msg in messages %}
+                        <div style="padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;font-weight:500;
+                            background:{% if msg.tags == 'success' %}#e8f5e9{% else %}#fdecea{% endif %};
+                            color:{% if msg.tags == 'success' %}#2e7d32{% else %}#c62828{% endif %};
+                            border:1px solid {% if msg.tags == 'success' %}#a5d6a7{% else %}#ef9a9a{% endif %};">
+                            {% if msg.tags == 'success' %}✅{% else %}⚠️{% endif %} {{ msg }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- ── SUBMITTED WORK BANNER (appears when employee has submitted) ── -->
+                        {% if task and task.status == "submitted" %}
+                        <div style="background:linear-gradient(135deg,#e8f5e9 0%,#f1f8e9 100%);border:2px solid #81c784;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+                                <div>
+                                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                        <span style="font-size:22px;">🎉</span>
+                                        <h3 style="font-size:16px;font-weight:700;color:var(--c-green);margin:0;">Work Submitted by Employee!</h3>
+                                    </div>
+                                    <p style="font-size:13px;color:#4a7c59;margin:0 0 4px;">Your employee has uploaded the completed work. Please download and review it, then mark the task as complete.</p>
+                                    {% with last_upd=task.work_updates.last %}
+                                    {% if last_upd and last_upd.work_file %}
+                                    <p style="font-size:12px;color:#6a9975;margin:0;">📁 File: {{ last_upd.work_file.name|slice:"20:" }}</p>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;">
+                                    {% with last_upd=task.work_updates.last %}
+                                    {% if last_upd and last_upd.work_file %}
+                                    <a href="{% url 'download_work_file' last_upd.id %}"
+                                       style="display:inline-flex;align-items:center;gap:8px;background:var(--c-b5);color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(33,150,243,.3);">
+                                        ⬇ Download Work File
+                                    </a>
+                                    {% endif %}
+                                    {% endwith %}
+                                    <form method="post" action="{% url 'worksinner_id' task.id %}" id="completeForm">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="mark_complete">
+                                        <button type="button" onclick="confirmComplete('completeForm')"
+                                            style="display:inline-flex;align-items:center;gap:8px;background:#27ae60;color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(39,174,96,.3);">
+                                            ✅ Mark Task as Complete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if task and task.status == "completed" %}
+                        <div style="background:#f0fdf4;border:2px solid #4caf50;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+                            <span style="font-size:28px;">✅</span>
+                            <div>
+                                <p style="font-size:15px;font-weight:700;color:#1b5e20;margin:0 0 2px;">Task Completed</p>
+                                <p style="font-size:12px;color:#4a7c59;margin:0;">This task has been marked as complete. All work files are still available to download below.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Work Updates -->
+                        {% if task %}
+                        {% for upd in task.work_updates.all %}
+                        <div style="border-left:3px solid {% if upd.work_file %}#27ae60{% else %}#e0e0e0{% endif %};padding:12px 16px;margin-bottom:14px;background:var(--c-page);border-radius:0 8px 8px 0;">
+                            <div class="comment-header" style="margin-bottom:8px;">
+                                <div class="comment-author">
+                                    <div class="author-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">{% if upd.employee.profile_image %}<img src="{{ upd.employee.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">{% else %}{{ upd.employee.profile.user.first_name|first|default:"E" }}{% endif %}</div>
+                                    <span class="author-name">{{ upd.employee.profile.user.get_full_name|default:upd.employee.profile.user.username }}</span>
+                                    {% if upd.work_file %}
+                                    <span style="background:var(--c-b0);color:var(--c-green);font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;">📁 File Delivered</span>
+                                    {% endif %}
+                                </div>
+                                <span class="comment-date">{{ upd.submitted_at|date:"j M Y | H:i" }}</span>
+                            </div>
+                            <p class="comment-subtitle" style="margin-bottom:10px;">{{ upd.note|truncatechars:300 }}</p>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                                <span style="font-size:12px;color:var(--c-tm);background:var(--c-surf2);padding:4px 12px;border-radius:20px;">⏱ {{ upd.hours_worked }}h worked</span>
+                                <span style="font-size:12px;color:var(--c-t3);background:var(--c-page);padding:4px 12px;border-radius:20px;">₹{{ task.employee.hourly_rate }}/hr</span>
+                                <span style="font-size:12px;font-weight:700;color:var(--c-green);background:var(--c-b0);padding:4px 12px;border-radius:20px;">= ₹{% widthratio upd.hours_worked 1 task.employee.hourly_rate %}</span>
+                                {% if upd.work_file %}
+                                <a href="{% url 'download_work_file' upd.id %}"
+                                   style="display:inline-flex;align-items:center;gap:6px;background:#27ae60;color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;">
+                                    ⬇ Download Work File
+                                </a>
+                                {% endif %}
+                                {% if upd.attachment %}
+                                <a href="{{ upd.attachment.url }}" target="_blank"
+                                   style="display:inline-flex;align-items:center;gap:6px;background:var(--c-b1);color:var(--c-b5);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-decoration:none;">
+                                    📎 View Attachment
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="comment">
+                            <div class="comment-header">
+                                <div class="comment-author">
+                                    <div class="author-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">{% if upd.employee.profile_image %}<img src="{{ upd.employee.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">{% else %}{{ upd.employee.profile.user.first_name|first|default:"E" }}{% endif %}</div>
+                                    <span class="author-name">System</span>
+                                </div>
+                            </div>
+                            <p class="comment-subtitle">No work updates submitted yet. Your employee will submit work here when ready.</p>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <aside class="task-sidebar">
+                    <!-- Deadline Card -->
+                    <div class="sidebar-card black">
+                        <div class="sidebar-title">Deadline</div>
+                        <div class="sidebar-subtitle">{% if task and task.end_date %}{{ task.end_date|date:"j F Y" }}{% else %}--{% endif %}</div>
+                    </div>
+
+                    <!-- Progress Card -->
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-section-title">Progress</h3>
+                        <div class="progress-info">
+                            <span class="progress-label">{{ task.status|capfirst|default:"Pending" }}</span>
+                            <span class="progress-value">{% if task.status == "completed" %}100%{% elif task.status == "in_progress" or task.status == "submitted" %}60%{% elif task.status == "accepted" %}30%{% else %}10%{% endif %}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {% if task.status == "completed" %}100{% elif task.status == "in_progress" or task.status == "submitted" %}60{% elif task.status == "accepted" %}30{% else %}10{% endif %}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Task Status Card -->
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-section-title">Task Status</h3>
+                        {% if task %}
+                        <span class="status-badge" style="
+                            {% if task.status == 'completed' %}background:var(--c-b0);color:var(--c-green);
+                            {% elif task.status == 'submitted' %}background:var(--c-white)3e0;color:var(--c-amber);
+                            {% elif task.status == 'in_progress' or task.status == 'accepted' %}background:var(--c-b1);color:var(--c-b8);
+                            {% elif task.status == 'rejected' %}background:var(--c-rbg);color:var(--c-red);
+                            {% else %}background:var(--c-page);color:var(--c-t3);
+                            {% endif %}
+                            padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;display:inline-block;margin-bottom:{% if task.status == 'submitted' %}12px{% else %}0{% endif %};">
+                            {% if task.status == 'completed' %}✅ Completed
+                            {% elif task.status == 'submitted' %}⏳ Work Submitted
+                            {% elif task.status == 'in_progress' %}🔄 In Progress
+                            {% elif task.status == 'accepted' %}✓ Accepted
+                            {% elif task.status == 'rejected' %}✗ Rejected
+                            {% else %}{{ task.status|capfirst }}
+                            {% endif %}
+                        </span>
+                        {% if task.status == 'submitted' %}
+                        <form method="post" action="{% url 'worksinner_id' task.id %}" id="sidebarCompleteForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="mark_complete">
+                            <button type="button" onclick="confirmComplete('sidebarCompleteForm')"
+                                style="width:100%;padding:10px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;">
+                                ✅ Mark as Complete
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% else %}
+                        <span class="status-badge">--</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Employee Card -->
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-section-title">Employee</h3>
+                        <div class="employee-list">
+                            {% if task and task.employee %}
+                            <div class="employee-item">
+                                <div class="employee-avatar"></div>
+                                <span class="employee-name">{{ task.employee.profile.user.get_full_name|default:task.employee.profile.user.username }}</span>
+                            </div>
+                            {% if task.employee.title %}<div style="font-size:12px;color:var(--c-tm);margin-top:4px;padding-left:8px;">{{ task.employee.title }}</div>{% endif %}
+                            {% if task.employee.skill %}<div style="font-size:12px;color:var(--c-b5);margin-top:4px;padding-left:8px;">{{ task.employee.skill.name }}</div>{% endif %}
+                            {% else %}
+                            <div class="employee-item">
+                                <div class="employee-avatar"></div>
+                                <span class="employee-name">Not assigned</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Cost Card -->
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-section-title">💰 Task Amount</h3>
+                        <!-- Auto-calculated from hours × hourly rate -->
+                        <div style="background:var(--c-b0);border-radius:8px;padding:12px 14px;border:1px solid #c8e6c9;margin-bottom:10px;">
+                            <div style="font-size:10px;color:var(--c-tm);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;">Auto-Calculated Amount</div>
+                            <div style="font-size:22px;font-weight:800;color:var(--c-green);">₹{{ task.estimated_cost|floatformat:2 }}</div>
+                            <div style="font-size:11px;color:var(--c-tm);margin-top:4px;">
+                                {{ task.total_hours }}h × ₹{{ task.employee.hourly_rate }}/hr
+                            </div>
+                        </div>
+                        <div style="font-size:12px;color:var(--c-tm);display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #f0f0f0;">
+                            <span>Original Budget</span>
+                            <span style="font-weight:600;color:var(--c-t3);">₹{{ task.budget|floatformat:2 }}</span>
+                        </div>
+                        {% if task.payment %}
+                        <div style="margin-top:8px;background:var(--c-white)3e0;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--c-amber);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <div>
+                                    💳 Payment: <strong>₹{{ task.payment.amount|floatformat:2 }}</strong>
+                                    <span style="margin-left:6px;background:{% if task.payment.status == 'paid' %}#e8f5e9;color:var(--c-green){% else %}#fff3e0;color:var(--c-amber){% endif %};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">{{ task.payment.status|capfirst }}</span>
+                                </div>
+                                {% if task.payment.status != 'paid' %}
+                                <a href="{% url 'payment_gateway' task.payment.id %}"
+                                   style="display:inline-flex;align-items:center;gap:4px;background:var(--c-b5);color:#fff;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none;">
+                                    💳 Pay Now
+                                </a>
+                                {% else %}
+                                <span style="font-size:11px;color:var(--c-green);font-weight:700;">✓ Payment Complete</span>
+                                {% endif %}
+                            </div>
+                            {% if task.payment.status == 'paid' %}
+                            <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08);font-size:11px;display:flex;gap:12px;">
+                                <span>Employee: <strong style="color:var(--c-green);">₹{{ task.payment.employee_payout|floatformat:2 }}</strong></span>
+                                <span>Admin (20%): <strong style="color:#e53935;">₹{{ task.payment.admin_commission|floatformat:2 }}</strong></span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Work Updates -->
+                    {% if task %}
+                    {% with updates=task.work_updates.all %}
+                    {% if updates %}
+                    {% for upd in updates %}
+                    <div class="sidebar-card">
+                        <div class="subtask-header">
+                            <h4 class="subtask-title">Work Update {{ forloop.counter }}</h4>
+                        </div>
+                        <p class="subtask-description">{{ upd.note|truncatechars:80 }}</p>
+                        <div class="progress-info">
+                            <span class="progress-label">Hours worked</span>
+                            <span class="progress-value">{{ upd.hours_worked }}h</span>
+                        </div>
+                        <div class="progress-info" style="margin-top:4px;">
+                            <span class="progress-label">Rate</span>
+                            <span class="progress-value">₹{{ task.employee.hourly_rate }}/hr</span>
+                        </div>
+                        <div class="progress-info" style="margin-top:4px;border-top:1px solid #f0f0f0;padding-top:6px;">
+                            <span class="progress-label" style="font-weight:700;color:var(--c-green);">Amount</span>
+                            <span class="progress-value" style="font-weight:800;color:var(--c-green);">₹{% widthratio upd.hours_worked 1 task.employee.hourly_rate %}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="sidebar-card">
+                        <div class="subtask-header">
+                            <h4 class="subtask-title">No work updates yet</h4>
+                        </div>
+                        <p class="subtask-description">Employee has not submitted updates yet.</p>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    {% endif %}
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Chat Icon -->
+
+<!-- ══ JobMate AI Chatbot ══ -->
+
+    <button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">
+      🤖<div id="jmDot">1</div>
+    </button>
+
+    <div id="jmBox">
+      <div id="jmHead">
+        <div class="av">🤖</div>
+        <div class="info">
+          <div class="t">JobMate AI</div>
+          <div class="s"><span class="dot"></span>Online — Ask me anything</div>
+        </div>
+        <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+      </div>
+      <div id="jmMsgs"></div>
+      <div id="jmTyping">
+        <div class="jmAv">🤖</div>
+        <div class="jmDots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="jmChips">
+        <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+        <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+        <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+        <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+      </div>
+      <div id="jmFoot">
+        <textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea>
+        <button id="jmGo" title="Send">&#10148;</button>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var hist=[], open=false;
+
+      function hhmmss(){
+        var d=new Date();
+        return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      }
+
+      function bubble(txt, mine){
+        var msgs=document.getElementById('jmMsgs');
+        var wrap=document.createElement('div');
+        wrap.className='jmRow'+(mine?' me':'');
+        if(!mine){
+          var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);
+        }
+        var inner=document.createElement('div');
+        var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+        var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();
+        inner.appendChild(b);inner.appendChild(t);
+        wrap.appendChild(inner);
+        msgs.appendChild(wrap);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      function typing(show){
+        document.getElementById('jmTyping').style.display=show?'flex':'none';
+        if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}
+      }
+
+      window.jmOpen=function(){
+        open=!open;
+        document.getElementById('jmBox').classList.toggle('on',open);
+        document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+        if(open){
+          if(!document.getElementById('jmMsgs').children.length){
+            bubble('Hi! I am the JobMate AI assistant. I can help you find skilled employees, request tasks, track work, manage payments, and more. How can I help you today?', false);
+          }
+          setTimeout(function(){
+            var inp=document.getElementById('jmInp');
+            if(inp) inp.focus();
+          },200);
+        }
+      };
+
+      window.jmAsk=function(txt){
+        document.getElementById('jmChips').style.display='none';
+        document.getElementById('jmInp').value=txt;
+        jmSend();
+      };
+
+      function jmSend(){
+        var inp=document.getElementById('jmInp');
+        var msg=inp.value.trim();
+        if(!msg) return;
+        inp.value='';inp.style.height='';
+        document.getElementById('jmChips').style.display='none';
+        bubble(msg, true);
+        hist.push({role:'user',content:msg});
+        typing(true);
+        fetch('/chatbot/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({message:msg,history:hist.slice(-10)})
+        })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(d){
+          typing(false);
+          bubble(d.reply||'Sorry, no response.', false);
+          hist.push({role:'assistant',content:d.reply||''});
+        })
+        .catch(function(err){
+          typing(false);
+          bubble('Sorry, could not connect. Please try again.', false);
+        });
+      }
+
+      document.getElementById('jmGo').addEventListener('click', jmSend);
+
+      document.getElementById('jmInp').addEventListener('keydown', function(e){
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}
+      });
+
+      document.getElementById('jmInp').addEventListener('input', function(){
+        this.style.height='';
+        this.style.height=Math.min(this.scrollHeight,80)+'px';
+      });
+
+      // Show badge after 4s
+      setTimeout(function(){
+        if(!open){
+          var dot=document.getElementById('jmDot');
+          if(dot) dot.style.display='flex';
+        }
+      },4000);
+    })();
+    </script>
+    <!-- ══ End JobMate AI Chatbot ══ -->
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 96px;
+        right: 28px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content: ''; position: absolute; inset: -4px; border-radius: 50%;
+        border: 2px solid rgba(144,202,249,0.45);
+        animation: stPulse 2.5s ease-in-out infinite; pointer-events: none;
+    }
+    @keyframes stPulse {
+        0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.35);opacity:0;}
+    }
+    </style>
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+<!-- ══ Mark-as-Complete Confirmation Modal ══ -->
+<div id="wiCompleteModal" style="
+    display:none; position:fixed; inset:0; z-index:10000;
+    background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="
+        background:var(--c-white); border-radius:16px; width:100%; max-width:420px;
+        margin:20px; padding:32px; box-shadow:0 16px 60px rgba(0,0,0,.25);
+        animation:wiModalIn .22s ease;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:48px; line-height:1;">✅</div>
+            <h2 style="font-size:20px; font-weight:700; color:var(--c-t1); margin:12px 0 6px;">Mark as Complete?</h2>
+            <p style="font-size:14px; color:var(--c-tm); margin:0; line-height:1.5;">
+                You are about to confirm this task as completed.
+            </p>
+        </div>
+        <p style="font-size:13px; color:var(--c-tm); background:var(--c-page); border-radius:8px;
+                  padding:12px 14px; margin-bottom:20px; line-height:1.6;">
+            ✔ The task will be marked <strong>Completed</strong> and a payment record will be created.<br>
+            This action cannot be undone.
+        </p>
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button onclick="closeWiModal()"
+                style="padding:10px 22px; border-radius:8px; border:none; background:var(--c-surf2);
+                       color:var(--c-t3); font-size:14px; font-weight:600; cursor:pointer;">
+                Cancel
+            </button>
+            <button id="wiConfirmBtn" onclick="submitWiForm()"
+                style="padding:10px 22px; border-radius:8px; border:none; background:#27ae60;
+                       color:#fff; font-size:14px; font-weight:700; cursor:pointer;">
+                ✅ Yes, Mark Complete
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes wiModalIn {
+    from { opacity:0; transform:translateY(-16px) scale(.96); }
+    to   { opacity:1; transform:none; }
+}
+</style>
+
+<script>
+var _wiPendingFormId = null;
+
+function confirmComplete(formId) {
+    _wiPendingFormId = formId;
+    document.getElementById('wiCompleteModal').style.display = 'flex';
+}
+
+function closeWiModal() {
+    document.getElementById('wiCompleteModal').style.display = 'none';
+    _wiPendingFormId = null;
+}
+
+function submitWiForm() {
+    if (!_wiPendingFormId) return;
+    var form = document.getElementById(_wiPendingFormId);
+    if (form) {
+        var btn = document.getElementById('wiConfirmBtn');
+        btn.textContent = '⏳ Processing…';
+        btn.disabled = true;
+        form.submit();
+    } else {
+        closeWiModal();
+    }
+}
+
+document.getElementById('wiCompleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeWiModal();
+});
+</script>
+<!-- ══ End Mark-as-Complete Modal ══ -->
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

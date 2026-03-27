@@ -1,0 +1,108 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('about/', views.about, name='about'),
+    path('login/', views.login, name='login'),
+    path('register/', views.register, name='register'),
+    path('logout/', views.logout, name='logout'),
+    path('roles/', views.roles, name='roles'),
+    path('rolesinner/', views.rolesinner, name='rolesinner'),
+    path('rolesinner/<int:employee_id>/', views.rolesinner, name='rolesinner_id'),
+    path('empprofile/', views.empprofile, name='empprofile'),
+    path('empprofile/<int:employee_id>/', views.empprofile, name='empprofile_id'),
+        
+    # User App URLs (using employee_app prefix)
+    path('user_app/employee/', views.employee, name='employee'),
+    path('user_app/dashboard/', views.client_dashboard, name='client_dashboard'),
+    path('user_app/myprofile/', views.myprofile, name='myprofile'),
+    path('user_app/payments/', views.payments, name='payments'),
+    path('user_app/support/', views.support, name='support'),
+    path('user_app/support/submit/', views.support_submit_ticket, name='support_submit_ticket'),
+    path('user_app/support/tickets/', views.support_tickets_json, name='support_tickets_json'),
+    path('user_app/task/', views.task, name='task'),
+    path('user_app/works/', views.works, name='works'),
+    path('user_app/worksinner/', views.worksinner, name='worksinner'),
+    path('user_app/worksinner/<int:task_id>/', views.worksinner, name='worksinner_id'),
+    
+    # Employee App URLs (using employee_app prefix)
+    path('employee_app/employee-dashboard/', views.dashboard_employee_dashboard, name='dashboard_employee_dashboard'),
+    path('employee_app/employee-task/', views.dashboard_employee_task, name='dashboard_employee_task'),
+    path('employee_app/employee-profile/', views.dashboard_employee_profile, name='dashboard_employee_profile'),
+    path('employee_app/testimonial/add/', views.employee_add_testimonial, name='employee_add_testimonial'),
+    path('employee_app/testimonial/<int:pk>/edit/', views.employee_edit_testimonial, name='employee_edit_testimonial'),
+    path('employee_app/testimonial/<int:pk>/delete/', views.employee_delete_testimonial, name='employee_delete_testimonial'),
+    path('employee_app/accreditation/add/', views.employee_add_accreditation, name='employee_add_accreditation'),
+    path('employee_app/accreditation/<int:pk>/edit/', views.employee_edit_accreditation, name='employee_edit_accreditation'),
+    path('employee_app/accreditation/<int:pk>/delete/', views.employee_delete_accreditation, name='employee_delete_accreditation'),
+    path('employee_app/portfolio/add/', views.employee_add_portfolio, name='employee_add_portfolio'),
+    path('employee_app/portfolio/<int:pk>/edit/', views.employee_edit_portfolio, name='employee_edit_portfolio'),
+    path('employee_app/portfolio/<int:pk>/delete/', views.employee_delete_portfolio, name='employee_delete_portfolio'),
+    path('employee_app/clients/', views.dashboard_clients, name='dashboard_clients'),
+    path('employee_app/revenue/', views.dashboard_revenue, name='dashboard_revenue'),
+    path('employee_app/task-request/', views.dashboard_task_request, name='dashboard_task_request'),
+    path('employee_app/task-detail/', views.dashboard_task_detail, name='dashboard_task_detail'),
+    path('employee_app/task-submit/', views.dashboard_task_submit, name='dashboard_task_submit'),
+    path('employee_app/task-detail/<int:task_id>/', views.dashboard_task_detail, name='dashboard_task_detail_id'),
+    path('employee_app/task-submit/<int:task_id>/', views.dashboard_task_submit, name='dashboard_task_submit_id'),
+    path('employee_app/task-request/<int:task_id>/', views.dashboard_task_request, name='dashboard_task_request_id'),
+    
+    # Admin Dashboard URLs
+    path('dashboard/admin-dashboard/', views.dashboard_admin_dashboard, name='dashboard_admin_dashboard'),
+    path('dashboard/admin-clients/', views.dashboard_admin_clients, name='dashboard_admin_clients'),
+    path('dashboard/admin-employee/', views.dashboard_admin_employee, name='dashboard_admin_employee'),
+    path('dashboard/admin-revenue/', views.dashboard_admin_revenue, name='dashboard_admin_revenue'),
+    path('dashboard/employeelogin/', views.dashboard_employeelogin, name='dashboard_employeelogin'),
+
+    # Explicit login pages for dashboards (UI templates)
+    path('admin_app/admin-login/', views.admin_login, name='admin_login'),
+    path('employee_app/employeelogin/', views.employee_login, name='employee_login'),
+    
+    # Admin App URLs
+    path('admin_app/admin-dashboard/', views.dashboard_admin_dashboard, name='dashboard_admin_dashboard'),
+    path('admin_app/admin-employee/', views.dashboard_admin_employee, name='dashboard_admin_employee'),
+    path('admin_app/admin-clients/', views.dashboard_admin_clients, name='dashboard_admin_clients'),
+    path('admin_app/admin-revenue/', views.dashboard_admin_revenue, name='dashboard_admin_revenue'),
+    path('admin_app/admin-employee-revenue/<int:employee_id>/', views.admin_employee_revenue_detail, name='admin_employee_revenue_detail'),
+    path('admin_app/admin-add-employee/', views.admin_add_employee, name='admin_add_employee'),
+    path('download/work-file/<int:update_id>/', views.download_work_file, name='download_work_file'),
+    path('notifications/', views.notifications, name='notifications'),
+    path('notifications/<int:pk>/read/', views.notification_read, name='notification_read'),
+    path('chat/<int:employee_id>/', views.chat_with_employee, name='chat_with_employee'),
+    path('employee_app/chat/', views.employee_chat_inbox, name='employee_chat_inbox'),
+    path('employee_app/chat/<int:conversation_id>/', views.employee_chat, name='employee_chat'),
+    path('chatbot/', views.chatbot, name='chatbot'),
+    path('user_app/task/<int:task_id>/edit/',   views.task_edit,   name='task_edit'),
+    path('user_app/task/<int:task_id>/delete/', views.task_delete, name='task_delete'),
+
+    # Department management (admin)
+    path('admin_app/departments/', views.dashboard_admin_departments, name='dashboard_admin_departments'),
+    path('admin_app/departments/add/', views.dashboard_admin_department_add, name='dashboard_admin_department_add'),
+    path('admin_app/departments/<int:pk>/edit/', views.dashboard_admin_department_edit, name='dashboard_admin_department_edit'),
+    path('admin_app/departments/<int:pk>/delete/', views.dashboard_admin_department_delete, name='dashboard_admin_department_delete'),
+    path('admin_app/support/', views.dashboard_admin_support, name='dashboard_admin_support'),
+    path('admin_app/support/<int:pk>/update/', views.dashboard_admin_support_update, name='dashboard_admin_support_update'),
+    path('api/nlp-search/', views.nlp_search_api, name='nlp_search_api'),
+    # Project feature
+    path('user_app/projects/', views.client_projects, name='client_projects'),
+    path('employee_app/employee-projects/', views.employee_projects, name='employee_projects'),
+    path('api/skills-for-dept/', views.client_projects_skills_json, name='client_projects_skills_json'),
+    path('download/project-file/<int:project_id>/', views.download_project_file, name='download_project_file'),
+    path('api/applicant-profile/<int:app_id>/', views.project_applicant_profile_json, name='project_applicant_profile_json'),
+    path('api/notification-count/', views.notification_count_json, name='notification_count_json'),
+    path('api/notification-mark-read/', views.notification_mark_all_read_json, name='notification_mark_all_read_json'),
+    path('user_app/payment-gateway/<int:payment_id>/', views.payment_gateway, name='payment_gateway'),
+    path('user_app/project-payment-gateway/<int:payment_id>/', views.project_payment_gateway, name='project_payment_gateway'),
+    path('user_app/bank-details/', views.bank_detail_view, name='bank_detail'),
+    path('admin_app/bank-accounts/', views.admin_bank_accounts, name='admin_bank_accounts'),
+    path('admin_app/settings/', views.dashboard_admin_settings, name='dashboard_admin_settings'),
+    path('user_app/payments/fix/<int:payment_id>/', views.fix_payment_amount, name='fix_payment_amount'),
+    path('admin_app/bank-accounts/<int:pk>/verify/', views.admin_bank_verify, name='admin_bank_verify'),
+    path('admin_app/bank-accounts/<int:pk>/delete/', views.admin_bank_delete, name='admin_bank_delete'),
+
+    # Admin user approval / rejection / deletion
+    path('admin_app/user/<str:user_type>/<int:pk>/approve/', views.admin_approve_user, name='admin_approve_user'),
+    path('admin_app/user/<str:user_type>/<int:pk>/reject/',  views.admin_reject_user,  name='admin_reject_user'),
+    path('admin_app/user/<str:user_type>/<int:pk>/delete/',  views.admin_delete_user,  name='admin_delete_user'),
+]

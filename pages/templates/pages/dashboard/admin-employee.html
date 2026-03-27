@@ -1,0 +1,445 @@
+{% load static %}
+{% load static dict_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - Master Employees</title>
+  <link rel="stylesheet" href="{% static 'css/page-admin-employee.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+    <!-- Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><span>JOB</span>MATE</div>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-info">
+                    <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">{% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">{% else %}{{ current_user_initials }}{% endif %}</div>
+                    <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                </div>
+                <span class="settings-icon">⚙️</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li><a href="{% url 'dashboard_admin_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="{% url 'dashboard_admin_employee' %}" class="active"><span class="nav-icon">👥</span> Employees</a></li>
+                <li><a href="{% url 'dashboard_admin_clients' %}"><span class="nav-icon">👤</span> Clients</a></li>
+                <li><a href="{% url 'dashboard_admin_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+                <li><a href="{% url 'dashboard_admin_departments' %}"><span class="nav-icon">🏷️</span> Departments</a></li>
+                <li><a href="{% url 'dashboard_admin_support' %}"><span class="nav-icon">🎫</span> Support Tickets</a></li>
+        <li><a href="{% url 'admin_bank_accounts' %}"><span class="nav-icon">🏦</span> Bank Accounts</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <li><a href="{% url 'dashboard_admin_settings' %}"><span class="nav-icon">⚙️</span> Settings</a></li>
+                <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- ── Toast messages ── -->
+            {% if messages %}
+            {% for msg in messages %}
+            <div style="margin-bottom:12px;padding:12px 16px;border-radius:6px;font-size:13px;font-weight:600;
+                background:{% if msg.tags == 'success' %}#e8f5e9;color:var(--c-green);border:1px solid #a5d6a7
+                {% elif msg.tags == 'warning' %}#fff3e0;color:var(--c-amber);border:1px solid #ffcc80
+                {% else %}#e3f2fd;color:var(--c-b8);border:1px solid #90caf9{% endif %};">
+                {{ msg }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- ── Page Header ── -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <h1 style="font-size:24px;font-weight:800;color:var(--c-t1);margin:0 0 4px;">Employee Registrations</h1>
+                    <p style="font-size:13px;color:var(--c-tm);margin:0;">Review, approve or reject new employee applications</p>
+                </div>
+                <form method="get" action="" data-nlp-search="admin_employees" class="page-search-form">
+                    <input type="hidden" name="tab" value="{{ tab }}">
+                    <span class="page-search-icon">🔍</span>
+                    <input type="text" class="page-search-input" placeholder="Search employees..." name="q" value="{{ q|default:'' }}">
+                    <button type="submit" class="page-search-btn">AI</button>
+                </form>
+            </div>
+
+            <!-- ── Status Tabs ── -->
+            <div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid #e8e8e8;">
+                {% for t, label, color in tab_data %}
+                <a href="?tab={{ t }}{% if q %}&q={{ q }}{% endif %}"
+                   style="padding:10px 22px;font-size:13px;font-weight:700;text-decoration:none;border-bottom:3px solid {% if tab == t %}{{ color }}{% else %}transparent{% endif %};color:{% if tab == t %}{{ color }}{% else %}#888{% endif %};margin-bottom:-2px;transition:all .2s;white-space:nowrap;">
+                    {{ label }}&nbsp;
+                    <span style="background:{% if tab == t %}{{ color }}{% else %}#e8e8e8{% endif %};color:{% if tab == t %}#fff{% else %}#666{% endif %};padding:2px 8px;border-radius:12px;font-size:11px;">
+                        {{ counts|get_item:t }}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+
+            <!-- ── Employee Cards ── -->
+            {% if not employees %}
+            <div style="text-align:center;padding:60px 20px;color:var(--c-tm);">
+                <div style="font-size:48px;margin-bottom:12px;">👥</div>
+                <p style="font-size:15px;font-weight:600;">No {{ tab }} employees</p>
+                <p style="font-size:13px;margin-top:4px;">{% if tab == 'pending' %}New registrations will appear here.{% elif tab == 'approved' %}Approved employees will appear here.{% else %}Rejected applications will appear here.{% endif %}</p>
+            </div>
+            {% endif %}
+
+            {% if q %}<div class="nlp-result-banner"><span>🤖 AI Search: <strong>{{ q }}</strong></span><a href="?" class="nlp-clear-btn">✕ Clear</a></div>{% endif %}
+      {% for e in employees %}
+            <div style="background:var(--c-white);border-radius:12px;border:1px solid var(--c-bdr);margin-bottom:18px;overflow:hidden;">
+
+                <!-- Card header -->
+                <div style="display:flex;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid #f2f2f2;flex-wrap:wrap;">
+                    <!-- Avatar -->
+                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;flex-shrink:0;overflow:hidden;">
+                        {% if e.profile_image %}<img src="{{ e.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;">{% else %}{{ e.profile.user.first_name|first|upper|default:"E" }}{% endif %}
+                    </div>
+                    <!-- Name + meta -->
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:16px;font-weight:700;color:var(--c-t1);">{{ e.profile.user.get_full_name|default:e.profile.user.username }}</div>
+                        <div style="font-size:12px;color:var(--c-tm);margin-top:2px;">{{ e.profile.user.email }} &nbsp;·&nbsp; 📞 {{ e.profile.phone|default:"—" }}</div>
+                    </div>
+                    <!-- Status badge -->
+                    <span style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+                        {% if e.approval_status == 'approved' %}background:var(--c-b0);color:var(--c-green);
+                        {% elif e.approval_status == 'rejected' %}background:#ffebee;color:var(--c-red);
+                        {% else %}background:var(--c-white)8e1;color:#f57f17;{% endif %}">
+                        {% if e.approval_status == 'approved' %}✅ Approved
+                        {% elif e.approval_status == 'rejected' %}❌ Rejected
+                        {% else %}⏳ Pending{% endif %}
+                    </span>
+                </div>
+
+                <!-- Registration details grid -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;padding:0;">
+
+                    <div style="padding:14px 24px;border-right:1px solid #f5f5f5;border-bottom:1px solid var(--c-surf2);">
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin-bottom:4px;">Department</div>
+                        <div style="font-size:13px;color:var(--c-t2);">{{ e.department.name|default:"—" }}</div>
+                    </div>
+
+                    <div style="padding:14px 24px;border-right:1px solid #f5f5f5;border-bottom:1px solid var(--c-surf2);">
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin-bottom:4px;">Skill / Category</div>
+                        <div style="font-size:13px;color:var(--c-t2);">{{ e.skill.name|default:"—" }}</div>
+                    </div>
+
+                    <div style="padding:14px 24px;border-right:1px solid #f5f5f5;border-bottom:1px solid var(--c-surf2);">
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin-bottom:4px;">Registered On</div>
+                        <div style="font-size:13px;color:var(--c-t2);">{{ e.profile.user.date_joined|date:"d M Y" }}</div>
+                    </div>
+
+                    <div style="padding:14px 24px;border-bottom:1px solid var(--c-surf2);">
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin-bottom:4px;">CV / Resume</div>
+                        {% if e.cv %}
+                        <a href="{{ e.cv.url }}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;color:var(--c-b5);font-size:13px;font-weight:600;text-decoration:none;">
+                            📄 View CV
+                        </a>
+                        {% else %}
+                        <span style="font-size:13px;color:var(--c-tm);">Not uploaded</span>
+                        {% endif %}
+                    </div>
+
+                    {% if e.approval_status == 'approved' and e.approved_at %}
+                    <div style="padding:14px 24px;border-right:1px solid #f5f5f5;border-bottom:1px solid var(--c-surf2);">
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin-bottom:4px;">Approved On</div>
+                        <div style="font-size:13px;color:var(--c-green);">{{ e.approved_at|date:"d M Y, H:i" }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if e.approval_status == 'rejected' and e.rejected_reason %}
+                    <div style="padding:14px 24px;border-bottom:1px solid var(--c-surf2);grid-column:1/-1;">
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin-bottom:4px;">Rejection Reason</div>
+                        <div style="font-size:13px;color:var(--c-red);">{{ e.rejected_reason }}</div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- Action buttons -->
+                <div style="padding:14px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+
+                    {% if e.approval_status == 'pending' or e.approval_status == 'rejected' %}
+                    <!-- Approve -->
+                    <form method="post" action="{% url 'admin_approve_user' 'employee' e.id %}" style="margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" style="padding:8px 20px;background:#4CAF50;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"
+                            onclick="return confirm('Approve {{ e.profile.user.get_full_name|default:e.profile.user.username }}?')">
+                            ✅ Approve
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if e.approval_status == 'pending' or e.approval_status == 'approved' %}
+                    <!-- Reject -->
+                    <button type="button" style="padding:8px 20px;background:var(--c-white);color:#e53935;border:1.5px solid #e53935;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"
+                        onclick="showRejectModal('employee', {{ e.id }}, '{{ e.profile.user.get_full_name|default:e.profile.user.username|escapejs }}')">
+                        ❌ Reject
+                    </button>
+                    {% endif %}
+
+                    {% if e.approval_status == 'approved' %}
+                    <!-- View Revenue -->
+                    <a href="{% url 'admin_employee_revenue_detail' e.id %}"
+                       style="padding:8px 20px;background:var(--c-b1);color:var(--c-b8);border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                        💰 Revenue
+                    </a>
+                    {% endif %}
+
+                    <!-- Delete -->
+                    <form method="post" action="{% url 'admin_delete_user' 'employee' e.id %}" style="margin:0;margin-left:auto;">
+                        {% csrf_token %}
+                        <button type="submit" style="padding:8px 18px;background:var(--c-white);color:var(--c-tm);border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;"
+                            onclick="return confirm('⚠️ Permanently delete {{ e.profile.user.get_full_name|default:e.profile.user.username|escapejs }} and ALL their data? This cannot be undone.')">
+                            🗑 Delete
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </main>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;align-items:center;justify-content:center;">
+        <div style="background:var(--c-white);border-radius:12px;padding:28px 32px;width:460px;max-width:94vw;box-shadow:0 10px 40px rgba(0,0,0,.2);">
+            <h3 style="font-size:16px;font-weight:700;color:var(--c-t1);margin:0 0 6px;">Reject Registration</h3>
+            <p id="rejectName" style="font-size:13px;color:var(--c-tm);margin:0 0 16px;"></p>
+            <form id="rejectForm" method="post" action="">
+                {% csrf_token %}
+                <label style="font-size:13px;font-weight:600;color:var(--c-t3);display:block;margin-bottom:6px;">Reason <span style="font-size:11px;color:var(--c-tm);">(optional)</span></label>
+                <textarea name="reason" rows="3" placeholder="e.g. Incomplete documents, invalid CV…"
+                    style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+                <div style="display:flex;gap:10px;margin-top:16px;">
+                    <button type="submit" style="flex:1;padding:10px;background:#e53935;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Confirm Reject</button>
+                    <button type="button" onclick="closeRejectModal()" style="flex:1;padding:10px;background:var(--c-page);color:var(--c-t3);border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function showRejectModal(type, id, name) {
+        document.getElementById('rejectModal').style.display = 'flex';
+        document.getElementById('rejectName').textContent = 'Rejecting: ' + name;
+        document.getElementById('rejectForm').action = '/admin_app/user/' + type + '/' + id + '/reject/';
+    }
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+    }
+    document.getElementById('rejectModal').addEventListener('click', function(e) {
+        if (e.target === this) closeRejectModal();
+    });
+    </script>
+
+    <!-- ══ JobMate AI Chatbot ══ -->
+
+    <button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">
+      🤖<div id="jmDot">1</div>
+    </button>
+
+    <div id="jmBox">
+      <div id="jmHead">
+        <div class="av">🤖</div>
+        <div class="info">
+          <div class="t">JobMate AI</div>
+          <div class="s"><span class="dot"></span>Online — Ask me anything</div>
+        </div>
+        <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+      </div>
+      <div id="jmMsgs"></div>
+      <div id="jmTyping">
+        <div class="jmAv">🤖</div>
+        <div class="jmDots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="jmChips">
+        <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+        <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+        <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+        <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+      </div>
+      <div id="jmFoot">
+        <textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea>
+        <button id="jmGo" title="Send">&#10148;</button>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var hist=[], open=false;
+
+      function hhmmss(){
+        var d=new Date();
+        return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      }
+
+      function bubble(txt, mine){
+        var msgs=document.getElementById('jmMsgs');
+        var wrap=document.createElement('div');
+        wrap.className='jmRow'+(mine?' me':'');
+        if(!mine){
+          var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);
+        }
+        var inner=document.createElement('div');
+        var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+        var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();
+        inner.appendChild(b);inner.appendChild(t);
+        wrap.appendChild(inner);
+        msgs.appendChild(wrap);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      function typing(show){
+        document.getElementById('jmTyping').style.display=show?'flex':'none';
+        if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}
+      }
+
+      window.jmOpen=function(){
+        open=!open;
+        document.getElementById('jmBox').classList.toggle('on',open);
+        document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+        if(open){
+          if(!document.getElementById('jmMsgs').children.length){
+            bubble('Hi! I am the JobMate AI assistant. I can help you find skilled employees, request tasks, track work, manage payments, and more. How can I help you today?', false);
+          }
+          setTimeout(function(){
+            var inp=document.getElementById('jmInp');
+            if(inp) inp.focus();
+          },200);
+        }
+      };
+
+      window.jmAsk=function(txt){
+        document.getElementById('jmChips').style.display='none';
+        document.getElementById('jmInp').value=txt;
+        jmSend();
+      };
+
+      function jmSend(){
+        var inp=document.getElementById('jmInp');
+        var msg=inp.value.trim();
+        if(!msg) return;
+        inp.value='';inp.style.height='';
+        document.getElementById('jmChips').style.display='none';
+        bubble(msg, true);
+        hist.push({role:'user',content:msg});
+        typing(true);
+        fetch('/chatbot/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({message:msg,history:hist.slice(-10)})
+        })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(d){
+          typing(false);
+          bubble(d.reply||'Sorry, no response.', false);
+          hist.push({role:'assistant',content:d.reply||''});
+        })
+        .catch(function(err){
+          typing(false);
+          bubble('Sorry, could not connect. Please try again.', false);
+        });
+      }
+
+      document.getElementById('jmGo').addEventListener('click', jmSend);
+
+      document.getElementById('jmInp').addEventListener('keydown', function(e){
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}
+      });
+
+      document.getElementById('jmInp').addEventListener('input', function(){
+        this.style.height='';
+        this.style.height=Math.min(this.scrollHeight,80)+'px';
+      });
+
+      // Show badge after 4s
+      setTimeout(function(){
+        if(!open){
+          var dot=document.getElementById('jmDot');
+          if(dot) dot.style.display='flex';
+        }
+      },4000);
+    })();
+    </script>
+    <!-- ══ End JobMate AI Chatbot ══ -->
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 28px;
+        right: 88px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content:''; position:absolute; inset:-4px; border-radius:50%;
+        border:2px solid rgba(144,202,249,0.45);
+        animation:stPulse 2.5s ease-in-out infinite; pointer-events:none;
+    }
+    @keyframes stPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.35);opacity:0;}}
+    </style>
+    <button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+        btn.onclick=function(){
+            window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+        };
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+</body>
+</html>

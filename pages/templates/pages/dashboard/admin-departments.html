@@ -1,0 +1,304 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Departments - JobMate Admin</title>
+  <link rel="stylesheet" href="{% static 'css/page-admin-departments.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header"><div class="logo"><span>JOB</span>MATE</div></div>
+    <div class="user-profile">
+        <div class="user-info">
+            <div class="user-avatar">{% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">{% else %}{{ request.user.first_name|first|upper|default:"A" }}{% endif %}</div>
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <span>⚙️</span>
+    </div>
+    <ul class="nav-menu">
+        <li><a href="{% url 'dashboard_admin_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'dashboard_admin_employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+        <li><a href="{% url 'dashboard_admin_clients' %}"><span class="nav-icon">🏢</span> Clients</a></li>
+        <li><a href="{% url 'dashboard_admin_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+        <li><a href="{% url 'dashboard_admin_departments' %}" class="active"><span class="nav-icon">🏷️</span> Departments</a></li>
+                <li><a href="{% url 'dashboard_admin_support' %}"><span class="nav-icon">🎫</span> Support Tickets</a></li>
+        <li><a href="{% url 'admin_bank_accounts' %}"><span class="nav-icon">🏦</span> Bank Accounts</a></li>
+            <li><a href="{% url 'dashboard_admin_settings' %}"><span class="nav-icon">⚙️</span> Settings</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+    <div class="content-header">
+        <h1 class="page-title">Departments</h1>
+        <div class="header-actions">
+            <form method="get" action="" data-nlp-search="departments" class="page-search-form">
+                <span class="page-search-icon">🔍</span>
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" class="page-search-input" placeholder="Search departments...">
+                <button type="submit" class="page-search-btn">AI</button>
+            </form>
+            {% include 'pages/includes/notif_icon.html' %}
+        </div>
+    </div>
+
+    {% if messages %}{% for msg in messages %}
+    <div class="toast {% if msg.tags == 'success' %}success{% else %}error{% endif %}">{{ msg }}</div>
+    {% endfor %}{% endif %}
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card"><div class="stat-num">{{ departments.count }}</div><div class="stat-lbl">Total Departments</div></div>
+        <div class="stat-card"><div class="stat-num">{{ departments|length }}</div><div class="stat-lbl">Showing{% if q %} (filtered){% endif %}</div></div>
+    </div>
+
+    <!-- Add Department -->
+    <div class="add-card">
+        <h3>➕ Add New Department</h3>
+        <form method="post" action="{% url 'dashboard_admin_department_add' %}" enctype="multipart/form-data">{% csrf_token %}
+            <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                    <label>Department Name *</label>
+                    <input type="text" name="name" class="form-input" placeholder="e.g. Software Engineering" required>
+                </div>
+                <div class="form-group" style="flex:2;">
+                    <label>Description / Definition</label>
+                    <textarea name="description" class="form-input" placeholder="Describe what this department does, its scope, and the kind of professionals it covers…"></textarea>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Department Image <span style="color:#e74c3c;font-size:11px;">(shown on Roles &amp; Skills pages)</span></label>
+                    <input type="file" name="image" id="addImgInput" class="form-input" accept="image/*" style="padding:6px;">
+                    <div id="addImgPreview" style="display:none;margin-top:8px;">
+                        <img id="addImgThumb" src="" alt="Preview" style="height:60px;border-radius:6px;object-fit:cover;">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Add Department</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Department Table -->
+    <div class="table-card">
+        <div class="table-head">
+            <div>Image</div>
+            <div>Name</div>
+            <div>Description</div>
+            <div>Skills</div>
+            <div>Staff</div>
+            <div>Actions</div>
+        </div>
+
+        {% if q %}<div class="nlp-result-banner"><span>🤖 AI Search: <strong>{{ q }}</strong></span><a href="?" class="nlp-clear-btn">✕ Clear</a></div>{% endif %}
+      {% for dept in departments %}
+        <div class="table-row">
+            <div>
+                {% if dept.image %}
+                    <img src="{{ dept.image.url }}" alt="{{ dept.name }}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;display:block;">
+                {% else %}
+                    <div style="width:52px;height:40px;border-radius:6px;background:linear-gradient(135deg,#283593,#1A237E);display:flex;align-items:center;justify-content:center;font-size:16px;">🏢</div>
+                {% endif %}
+            </div>
+            <div class="dept-name">{{ dept.name }}</div>
+            <div class="dept-desc {% if not dept.description %}empty{% endif %}">
+                {{ dept.description|default:"No description added yet." }}
+            </div>
+            <div class="count-badge">{{ dept.skill_count }}</div>
+            <div class="count-badge">{{ dept.emp_count }}</div>
+            <div style="display:flex;gap:6px;">
+                <button class="btn-edit"
+                    onclick="openEdit({{ dept.id }},'{{ dept.name|escapejs }}','{{ dept.description|escapejs }}','{% if dept.image %}{{ dept.image.url }}{% endif %}')">
+                    ✎ Edit
+                </button>
+                <button class="btn-delete"
+                    onclick="openDelete({{ dept.id }},'{{ dept.name|escapejs }}')">
+                    🗑
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="table-row"><div class="empty-row">No departments found{% if q %} matching "{{ q }}"{% endif %}. Add one above.</div></div>
+        {% endfor %}
+    </div>
+</main>
+</div>
+
+<!-- Edit Modal -->
+<div class="overlay" id="editOverlay">
+    <div class="modal">
+        <h3>Edit Department</h3>
+        <form method="post" id="editForm" action="" enctype="multipart/form-data">{% csrf_token %}
+            <div class="modal-field">
+                <label>Name *</label>
+                <input type="text" name="name" id="editName" class="form-input" style="width:100%;" required>
+            </div>
+            <div class="modal-field">
+                <label>Description / Definition</label>
+                <textarea name="description" id="editDesc" class="form-input" style="width:100%;min-height:120px;"
+                    placeholder="Describe what this department does…"></textarea>
+            </div>
+            <div class="modal-field">
+                <label>Department Image</label>
+                <!-- Current image preview -->
+                <div id="editImgPreview" style="margin-bottom:10px;display:none;">
+                    <img id="editImgThumb" src="" alt="Current image"
+                         style="height:60px;border-radius:6px;object-fit:cover;display:block;margin-bottom:6px;">
+                    <label style="font-size:12px;color:#e74c3c;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                        <input type="checkbox" name="clear_image" value="1" id="clearImageCheck" style="margin:0;">
+                        Remove current image
+                    </label>
+                </div>
+                <input type="file" name="image" id="editImgInput" class="form-input" accept="image/*" style="padding:6px;">
+                <p style="font-size:11px;color:var(--c-tm);margin-top:4px;">Upload new image to replace. Leave blank to keep existing.</p>
+            </div>
+            <div class="modal-row">
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <button type="button" class="btn-cancel" onclick="closeEdit()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="overlay" id="deleteOverlay">
+    <div class="modal">
+        <h3>Delete Department</h3>
+        <p style="font-size:14px;color:var(--c-t3);margin-bottom:6px;">Delete <strong id="deleteName"></strong>?</p>
+        <p style="font-size:13px;color:var(--c-tm);">This will also delete all skills under this department. This cannot be undone.</p>
+        <form method="post" id="deleteForm" action="">{% csrf_token %}
+            <div class="modal-row">
+                <button type="submit" class="btn-danger">Yes, Delete</button>
+                <button type="button" class="btn-cancel" onclick="closeDelete()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Add form — live image preview
+document.getElementById('addImgInput').addEventListener('change', function() {
+    var file = this.files[0];
+    var preview = document.getElementById('addImgPreview');
+    var thumb   = document.getElementById('addImgThumb');
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            thumb.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+});
+
+function openEdit(id, name, desc, imageUrl) {
+    document.getElementById('editName').value = name;
+    document.getElementById('editDesc').value = desc;
+    document.getElementById('editForm').action = '/admin_app/departments/' + id + '/edit/';
+    // Reset file input and clear checkbox
+    document.getElementById('editImgInput').value = '';
+    document.getElementById('clearImageCheck').checked = false;
+    // Show or hide current image preview
+    var preview = document.getElementById('editImgPreview');
+    var thumb   = document.getElementById('editImgThumb');
+    if (imageUrl) {
+        thumb.src = imageUrl;
+        preview.style.display = 'block';
+    } else {
+        thumb.src = '';
+        preview.style.display = 'none';
+    }
+    document.getElementById('editOverlay').classList.add('open');
+}
+function closeEdit() { document.getElementById('editOverlay').classList.remove('open'); }
+
+function openDelete(id, name) {
+    document.getElementById('deleteName').textContent = name;
+    document.getElementById('deleteForm').action = '/admin_app/departments/' + id + '/delete/';
+    document.getElementById('deleteOverlay').classList.add('open');
+}
+function closeDelete() { document.getElementById('deleteOverlay').classList.remove('open'); }
+
+document.querySelectorAll('.overlay').forEach(function(el) {
+    el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('open'); });
+});
+</script>
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 28px;
+        right: 88px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content:''; position:absolute; inset:-4px; border-radius:50%;
+        border:2px solid rgba(144,202,249,0.45);
+        animation:stPulse 2.5s ease-in-out infinite; pointer-events:none;
+    }
+    @keyframes stPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.35);opacity:0;}}
+    </style>
+    <button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+        btn.onclick=function(){
+            window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+        };
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

@@ -1,0 +1,534 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - Master Revenue</title>
+  <link rel="stylesheet" href="{% static 'css/page-admin-revenue.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+    <!-- Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><span>JOB</span>MATE</div>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-info">
+                    <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">{% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">{% else %}{{ current_user_initials }}{% endif %}</div>
+                    <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                </div>
+                <span class="settings-icon">⚙️</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li><a href="{% url 'dashboard_admin_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="{% url 'dashboard_admin_employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+                <li><a href="{% url 'dashboard_admin_clients' %}"><span class="nav-icon">👤</span> Clients</a></li>
+                <li><a href="{% url 'dashboard_admin_revenue' %}" class="active"><span class="nav-icon">💰</span> Revenue</a></li>
+                <li><a href="{% url 'dashboard_admin_departments' %}"><span class="nav-icon">🏷️</span> Departments</a></li>
+                <li><a href="{% url 'dashboard_admin_support' %}"><span class="nav-icon">🎫</span> Support Tickets</a></li>
+        <li><a href="{% url 'admin_bank_accounts' %}"><span class="nav-icon">🏦</span> Bank Accounts</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <li><a href="{% url 'dashboard_admin_settings' %}"><span class="nav-icon">⚙️</span> Settings</a></li>
+                <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="content-header">
+                <h1 class="page-title">Revenue</h1>
+                <div class="header-actions">
+                    <a href="{% url 'dashboard_admin_employee' %}"
+                       style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#E3F2FD;color:#1565C0;border:1.5px solid #BBDEFB;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='#BBDEFB'" onmouseout="this.style.background='#E3F2FD'">
+                        📊 Per-Employee Analysis →
+                    </a>
+                    {% include 'pages/includes/notif_icon.html' %}
+                </div>
+            </div>
+
+            <!-- Per-Employee Revenue Shortcut -->
+            <!-- (moved to header action button) -->
+
+            <!-- Revenue Summary Cards -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:28px;">
+                <div style="background:var(--c-white);border-radius:12px;border:1px solid var(--c-bdr);padding:16px 18px;">
+                    <div style="font-size:10px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">💼 Task Revenue</div>
+                    <div style="font-size:22px;font-weight:800;color:#1976D2;">₹{{ task_total|floatformat:0 }}</div>
+                    <div style="font-size:11px;margin-top:4px;display:flex;gap:8px;">
+                        <span style="color:var(--c-green);">✓ ₹{{ task_paid|floatformat:0 }}</span>
+                        <span style="color:var(--c-amber);">⏳ ₹{{ task_pending_amt|floatformat:0 }}</span>
+                    </div>
+                </div>
+                <div style="background:var(--c-white);border-radius:12px;border:1px solid var(--c-bdr);padding:16px 18px;">
+                    <div style="font-size:10px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">📁 Project Revenue</div>
+                    <div style="font-size:22px;font-weight:800;color:var(--c-green);">₹{{ project_total|floatformat:0 }}</div>
+                    <div style="font-size:11px;margin-top:4px;display:flex;gap:8px;">
+                        <span style="color:var(--c-green);">✓ ₹{{ proj_paid|floatformat:0 }}</span>
+                        <span style="color:var(--c-amber);">⏳ ₹{{ proj_pending_amt|floatformat:0 }}</span>
+                    </div>
+                </div>
+                <div style="background:var(--c-white)3e0;border-radius:12px;border:1px solid #ffe0b2;padding:16px 18px;">
+                    <div style="font-size:10px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🏦 Admin Commission (20%)</div>
+                    <div style="font-size:22px;font-weight:800;color:var(--c-amber);">₹{{ total_admin_revenue|floatformat:0 }}</div>
+                    <div style="font-size:11px;color:var(--c-tm);margin-top:4px;">Tasks ₹{{ task_admin_comm|floatformat:0 }} + Proj ₹{{ proj_admin_comm|floatformat:0 }}</div>
+                </div>
+                <div style="background:var(--c-b0);border-radius:12px;border:1px solid #c8e6c9;padding:16px 18px;">
+                    <div style="font-size:10px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">💵 Employee Payouts (80%)</div>
+                    <div style="font-size:22px;font-weight:800;color:var(--c-green);">₹{{ total_emp_payout|floatformat:0 }}</div>
+                    <div style="font-size:11px;color:var(--c-tm);margin-top:4px;">Tasks ₹{{ task_emp_payout|floatformat:0 }} + Proj ₹{{ proj_emp_payout|floatformat:0 }}</div>
+                </div>
+                <div style="background:linear-gradient(135deg,#1565c0,#0d47a1);border-radius:12px;padding:16px 18px;">
+                    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🏆 Grand Total</div>
+                    <div style="font-size:22px;font-weight:800;color:#fff;">₹{{ grand_total|floatformat:0 }}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:4px;">All time</div>
+                </div>
+            </div>
+
+            <!-- ══ Task Payments Table ══ -->
+            <div class="rev-section-header">
+                <div class="rev-section-title">💼 Task Payments
+                    <span class="rev-count">{{ payments|length }} record{{ payments|length|pluralize }}</span>
+                </div>
+                <form method="get" action="" class="rev-search-form" data-nlp-search="admin_revenue">
+                    {% if q_proj %}<input type="hidden" name="q_proj" value="{{ q_proj }}">{% endif %}
+                    {% if q_emp %}<input type="hidden" name="q_emp" value="{{ q_emp }}">{% endif %}
+                    <span class="rev-search-icon">🔍</span>
+                    <input type="text" class="rev-search-input" name="q_task"
+                           value="{{ q_task }}"
+                           placeholder="Search by task, employee, client, status…">
+                    <button type="submit" class="rev-search-btn">AI</button>
+                    {% if q_task %}<a href="?{% if q_proj %}q_proj={{ q_proj }}&{% endif %}{% if q_emp %}q_emp={{ q_emp }}{% endif %}" class="rev-clear-btn" title="Clear search">✕</a>{% endif %}
+                </form>
+            </div>
+            {% if q_task %}
+            <div class="nlp-result-banner" style="margin-bottom:10px;">
+                <span>🤖 AI Search: <strong>{{ q_task }}</strong> — {{ payments|length }} result{{ payments|length|pluralize }}</span>
+                <a href="?{% if q_proj %}q_proj={{ q_proj }}&{% endif %}{% if q_emp %}q_emp={{ q_emp }}{% endif %}" class="nlp-clear-btn">✕ Clear</a>
+            </div>
+            {% endif %}
+            <div class="revenue-table-container" style="margin-bottom:30px;">
+                <table class="revenue-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Employee</th>
+                            <th>Client</th>
+                            <th style="text-align:right;">Total Amount</th>
+                            <th style="text-align:right;">Employee (80%)</th>
+                            <th style="text-align:right;">Admin (20%)</th>
+                            <th>Method</th>
+                            <th style="text-align:center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in payments %}
+                        <tr>
+                            <td class="task-title">{{ p.task.title|truncatechars:30 }}</td>
+                            <td>
+                                <div class="client-info">
+                                    <div class="client-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">
+                                        {% if p.task and p.task.employee %}{{ p.task.employee.profile.user.first_name|first|upper }}{% else %}E{% endif %}
+                                    </div>
+                                    <span class="client-name">{% if p.task and p.task.employee %}{{ p.task.employee.profile.user.get_full_name|default:p.task.employee.profile.user.username|truncatechars:18 }}{% else %}--{% endif %}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="client-info">
+                                    <div class="client-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">{{ p.client.profile.user.first_name|first|upper|default:"C" }}</div>
+                                    <span class="client-name">{{ p.client.profile.user.get_full_name|default:p.client.profile.user.username|truncatechars:18 }}</span>
+                                </div>
+                            </td>
+                            <td style="text-align:right;">
+                                <div style="font-weight:800;color:var(--c-t1);">₹{{ p.amount|floatformat:2 }}</div>
+                                <div style="font-size:10px;color:#9CA3AF;margin-top:2px;">{{ p.task.total_hours }}h × ₹{{ p.task.employee.hourly_rate }}/hr</div>
+                            </td>
+                            <td style="text-align:right;font-weight:800;color:var(--c-green);">
+                                {% if p.status == 'paid' %}₹{{ p.employee_payout|floatformat:2 }}{% else %}<span style="color:var(--c-tm);font-size:11px;">₹{% widthratio p.amount 10 8 %} on pay</span>{% endif %}
+                            </td>
+                            <td style="text-align:right;font-weight:700;color:#e53935;">
+                                {% if p.status == 'paid' %}₹{{ p.admin_commission|floatformat:2 }}{% else %}<span style="color:var(--c-tm);font-size:11px;">₹{% widthratio p.amount 10 2 %} on pay</span>{% endif %}
+                            </td>
+                            <td class="category-text">{{ p.method|default:"—" }}</td>
+                            <td style="text-align:center;">
+                                {% if p.status == 'paid' %}
+                                    <span style="background:var(--c-b0);color:var(--c-green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✓ Paid</span>
+                                {% else %}
+                                    <span style="background:var(--c-white)3e0;color:var(--c-amber);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" style="text-align:center;color:var(--c-tm);padding:24px;">No task payments yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ══ Project Payments Table ══ -->
+            <div class="rev-section-header">
+                <div class="rev-section-title">📁 Project Payments
+                    <span class="rev-count">{{ project_payments|length }} record{{ project_payments|length|pluralize }}</span>
+                </div>
+                <form method="get" action="" class="rev-search-form" data-nlp-search="admin_revenue">
+                    {% if q_task %}<input type="hidden" name="q_task" value="{{ q_task }}">{% endif %}
+                    {% if q_emp %}<input type="hidden" name="q_emp" value="{{ q_emp }}">{% endif %}
+                    <span class="rev-search-icon">🔍</span>
+                    <input type="text" class="rev-search-input" name="q_proj"
+                           value="{{ q_proj }}"
+                           placeholder="Search by project, employee, client, status…">
+                    <button type="submit" class="rev-search-btn">AI</button>
+                    {% if q_proj %}<a href="?{% if q_task %}q_task={{ q_task }}&{% endif %}{% if q_emp %}q_emp={{ q_emp }}{% endif %}" class="rev-clear-btn" title="Clear search">✕</a>{% endif %}
+                </form>
+            </div>
+            {% if q_proj %}
+            <div class="nlp-result-banner" style="margin-bottom:10px;">
+                <span>🤖 AI Search: <strong>{{ q_proj }}</strong> — {{ project_payments|length }} result{{ project_payments|length|pluralize }}</span>
+                <a href="?{% if q_task %}q_task={{ q_task }}&{% endif %}{% if q_emp %}q_emp={{ q_emp }}{% endif %}" class="nlp-clear-btn">✕ Clear</a>
+            </div>
+            {% endif %}
+            <div class="revenue-table-container" style="margin-bottom:30px;">
+                <table class="revenue-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Employee</th>
+                            <th>Client</th>
+                            <th style="text-align:right;">Total Amount</th>
+                            <th style="text-align:right;">Employee (80%)</th>
+                            <th style="text-align:right;">Admin (20%)</th>
+                            <th>Method</th>
+                            <th style="text-align:center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pp in project_payments %}
+                        <tr>
+                            <td class="task-title">{{ pp.project.title|truncatechars:30 }}</td>
+                            <td>
+                                <div class="client-info">
+                                    <div class="client-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#66bb6a,#2e7d32);">{{ pp.employee.profile.user.first_name|first|upper }}</div>
+                                    <span class="client-name">{{ pp.employee.profile.user.get_full_name|default:pp.employee.profile.user.username|truncatechars:18 }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="client-info">
+                                    <div class="client-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">{{ pp.client.profile.user.first_name|first|upper }}</div>
+                                    <span class="client-name">{{ pp.client.profile.user.get_full_name|default:pp.client.profile.user.username|truncatechars:18 }}</span>
+                                </div>
+                            </td>
+                            <td style="text-align:right;">
+                                <div style="font-weight:800;color:var(--c-t1);">₹{{ pp.amount|floatformat:2 }}</div>
+                                <div style="font-size:10px;color:#9CA3AF;margin-top:2px;">Client Budget</div>
+                            </td>
+                            <td style="text-align:right;font-weight:800;color:var(--c-green);">
+                                {% if pp.status == 'paid' %}₹{{ pp.employee_payout|floatformat:2 }}{% else %}<span style="color:var(--c-tm);font-size:11px;">₹{% widthratio pp.amount 10 8 %} on pay</span>{% endif %}
+                            </td>
+                            <td style="text-align:right;font-weight:700;color:#e53935;">
+                                {% if pp.status == 'paid' %}₹{{ pp.admin_commission|floatformat:2 }}{% else %}<span style="color:var(--c-tm);font-size:11px;">₹{% widthratio pp.amount 10 2 %} on pay</span>{% endif %}
+                            </td>
+                            <td class="category-text">{{ pp.method|default:"—" }}</td>
+                            <td style="text-align:center;">
+                                {% if pp.status == 'paid' %}
+                                    <span style="background:var(--c-b0);color:var(--c-green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✓ Paid</span>
+                                {% else %}
+                                    <span style="background:var(--c-white)3e0;color:var(--c-amber);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" style="text-align:center;color:var(--c-tm);padding:24px;">No project payments yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ═══ Employee Project Revenue Breakdown ═══ -->
+            {% if emp_proj_revenue or q_emp %}
+            <div class="rev-section-header">
+                <div class="rev-section-title">👤 Employee Revenue Breakdown
+                    <span class="rev-count">{{ emp_proj_revenue|length }} employee{{ emp_proj_revenue|length|pluralize }}</span>
+                </div>
+                <form method="get" action="" class="rev-search-form" data-nlp-search="admin_revenue">
+                    {% if q_task %}<input type="hidden" name="q_task" value="{{ q_task }}">{% endif %}
+                    {% if q_proj %}<input type="hidden" name="q_proj" value="{{ q_proj }}">{% endif %}
+                    <span class="rev-search-icon">🔍</span>
+                    <input type="text" class="rev-search-input" name="q_emp"
+                           value="{{ q_emp }}"
+                           placeholder="Search by employee name or role…">
+                    <button type="submit" class="rev-search-btn">AI</button>
+                    {% if q_emp %}<a href="?{% if q_task %}q_task={{ q_task }}&{% endif %}{% if q_proj %}q_proj={{ q_proj }}{% endif %}" class="rev-clear-btn" title="Clear search">✕</a>{% endif %}
+                </form>
+            </div>
+            {% if q_emp %}
+            <div class="nlp-result-banner" style="margin-bottom:10px;">
+                <span>🤖 AI Search: <strong>{{ q_emp }}</strong> — {{ emp_proj_revenue|length }} result{{ emp_proj_revenue|length|pluralize }}</span>
+                <a href="?{% if q_task %}q_task={{ q_task }}&{% endif %}{% if q_proj %}q_proj={{ q_proj }}{% endif %}" class="nlp-clear-btn">✕ Clear</a>
+            </div>
+            {% endif %}
+            <div style="font-size:13px;font-weight:700;color:var(--c-t3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;">👤 Employee Project Revenue Breakdown</div>
+            <div style="background:var(--c-white);border-radius:12px;border:1px solid var(--c-bdr);overflow:hidden;margin-bottom:30px;">
+                <table class="revenue-table">
+                    <thead>
+                        <tr>
+                            <th style="width:48px;"></th>
+                            <th>Employee</th>
+                            <th>Title / Role</th>
+                            <th>Projects Completed</th>
+                            <th>Total Earned</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in emp_proj_revenue %}
+                        <tr>
+                            <td style="padding:10px 8px 10px 16px;">
+                                <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#42a5f5,#1565c0);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">
+                                    {{ row.initial }}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:700;color:var(--c-t1);font-size:13px;">{{ row.full_name }}</div>
+                            </td>
+                            <td style="color:var(--c-tm);font-size:12px;">{{ row.title|default:"—" }}</td>
+                            <td>
+                                <span style="background:var(--c-b0);color:var(--c-green);padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;">
+                                    {{ row.count }} project{{ row.count|pluralize }}
+                                </span>
+                            </td>
+                            <td>
+                                <span style="font-size:18px;font-weight:800;color:var(--c-green);">₹{{ row.total|floatformat:0 }}</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'admin_employee_revenue_detail' row.emp_id %}"
+                                   style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:var(--c-b1);color:var(--c-b8);border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;"
+                                   onmouseover="this.style.background='#bbdefb'"
+                                   onmouseout="this.style.background='#e3f2fd'">
+                                    📊 View Detail
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            <!-- ═══ End Employee Breakdown ═══ -->
+
+        </main>
+    </div>
+
+    <!-- Floating Chat -->
+    <!-- ══ JobMate AI Chatbot ══ -->
+
+    <button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">
+      🤖<div id="jmDot">1</div>
+    </button>
+
+    <div id="jmBox">
+      <div id="jmHead">
+        <div class="av">🤖</div>
+        <div class="info">
+          <div class="t">JobMate AI</div>
+          <div class="s"><span class="dot"></span>Online — Ask me anything</div>
+        </div>
+        <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+      </div>
+      <div id="jmMsgs"></div>
+      <div id="jmTyping">
+        <div class="jmAv">🤖</div>
+        <div class="jmDots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="jmChips">
+        <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+        <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+        <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+        <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+      </div>
+      <div id="jmFoot">
+        <textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea>
+        <button id="jmGo" title="Send">&#10148;</button>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var hist=[], open=false;
+
+      function hhmmss(){
+        var d=new Date();
+        return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      }
+
+      function bubble(txt, mine){
+        var msgs=document.getElementById('jmMsgs');
+        var wrap=document.createElement('div');
+        wrap.className='jmRow'+(mine?' me':'');
+        if(!mine){
+          var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);
+        }
+        var inner=document.createElement('div');
+        var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+        var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();
+        inner.appendChild(b);inner.appendChild(t);
+        wrap.appendChild(inner);
+        msgs.appendChild(wrap);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      function typing(show){
+        document.getElementById('jmTyping').style.display=show?'flex':'none';
+        if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}
+      }
+
+      window.jmOpen=function(){
+        open=!open;
+        document.getElementById('jmBox').classList.toggle('on',open);
+        document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+        if(open){
+          if(!document.getElementById('jmMsgs').children.length){
+            bubble('Hi! I am the JobMate AI assistant. I can help you find skilled employees, request tasks, track work, manage payments, and more. How can I help you today?', false);
+          }
+          setTimeout(function(){
+            var inp=document.getElementById('jmInp');
+            if(inp) inp.focus();
+          },200);
+        }
+      };
+
+      window.jmAsk=function(txt){
+        document.getElementById('jmChips').style.display='none';
+        document.getElementById('jmInp').value=txt;
+        jmSend();
+      };
+
+      function jmSend(){
+        var inp=document.getElementById('jmInp');
+        var msg=inp.value.trim();
+        if(!msg) return;
+        inp.value='';inp.style.height='';
+        document.getElementById('jmChips').style.display='none';
+        bubble(msg, true);
+        hist.push({role:'user',content:msg});
+        typing(true);
+        fetch('/chatbot/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({message:msg,history:hist.slice(-10)})
+        })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(d){
+          typing(false);
+          bubble(d.reply||'Sorry, no response.', false);
+          hist.push({role:'assistant',content:d.reply||''});
+        })
+        .catch(function(err){
+          typing(false);
+          bubble('Sorry, could not connect. Please try again.', false);
+        });
+      }
+
+      document.getElementById('jmGo').addEventListener('click', jmSend);
+
+      document.getElementById('jmInp').addEventListener('keydown', function(e){
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}
+      });
+
+      document.getElementById('jmInp').addEventListener('input', function(){
+        this.style.height='';
+        this.style.height=Math.min(this.scrollHeight,80)+'px';
+      });
+
+      // Show badge after 4s
+      setTimeout(function(){
+        if(!open){
+          var dot=document.getElementById('jmDot');
+          if(dot) dot.style.display='flex';
+        }
+      },4000);
+    })();
+    </script>
+    <!-- ══ End JobMate AI Chatbot ══ -->
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 28px;
+        right: 88px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content:''; position:absolute; inset:-4px; border-radius:50%;
+        border:2px solid rgba(144,202,249,0.45);
+        animation:stPulse 2.5s ease-in-out infinite; pointer-events:none;
+    }
+    @keyframes stPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.35);opacity:0;}}
+    </style>
+    <button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+        btn.onclick=function(){
+            window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+        };
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

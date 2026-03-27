@@ -1,0 +1,52 @@
+{% load static %}
+{# ── Notification live-update + mark-as-read — include once per page ── #}
+<script>
+(function(){
+  var CSRF = '{{ csrf_token }}';
+  var COUNT_URL = '/api/notification-count/';
+  var MARK_URL  = '/api/notification-mark-read/';
+
+  function setBadge(count) {
+    document.querySelectorAll('.notif-badge').forEach(function(b){
+      if (count > 0) {
+        b.textContent = count > 99 ? '99+' : String(count);
+        b.style.display = 'flex';
+        b.style.transform = 'scale(1.25)';
+        setTimeout(function(){ b.style.transform = ''; }, 200);
+      } else {
+        b.style.display = 'none';
+      }
+    });
+    document.querySelectorAll('.nav-notif-badge').forEach(function(b){
+      if (count > 0) {
+        b.textContent = count > 99 ? '99+' : String(count);
+        b.style.display = 'inline-flex';
+      } else {
+        b.style.display = 'none';
+      }
+    });
+  }
+
+  /* Poll every 30 s */
+  setInterval(function(){
+    fetch(COUNT_URL, { headers:{ 'X-Requested-With':'XMLHttpRequest' } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ if (d !== null) setBadge(d.count); })
+      .catch(function(){});
+  }, 30000);
+
+  /* Click on .notif-icon-wrap → mark-all-read, zero badge, navigate */
+  document.addEventListener('click', function(e){
+    var wrap = e.target.closest('.notif-icon-wrap');
+    if (!wrap) return;
+    e.preventDefault();
+    var href = wrap.getAttribute('href') || '/notifications/';
+    setBadge(0);
+    fetch(MARK_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .finally(function(){ window.location.href = href; });
+  });
+})();
+</script>

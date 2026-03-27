@@ -1,0 +1,261 @@
+{% extends 'pages/base.html' %}
+{% load static %}
+
+{% block title %}JobMate - Register{% endblock %}
+{% block body_class %}register-body{% endblock %}
+
+{% block content %}
+<!-- Main Content -->
+    <div class="register-wrapper">
+        <div class="register-container">
+            <div class="register-logo"><span class="logo-job">JOB</span><span class="logo-mate">MATE</span></div>
+
+            <h1 class="register-title">CREATE ACCOUNT</h1>
+
+            <p class="register-description">
+                This is a place for a exerpt. Lorem ipsum dolor sit amet consectetur. At fusce ac netus non nam ut amet. Arcu tempor rhoncus varius purus a
+            </p>
+
+            <form class="register-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Error messages -->
+                {% if form.errors %}
+                <div style="margin-bottom:18px;background:var(--c-white)0f0;border:1px solid #ffcccc;border-radius:4px;padding:12px 15px;">
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                        <p style="color:#b00020;font-size:13px;margin:0 0 4px;">⚠ {{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                    {% for field in form %}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                            <p style="color:#b00020;font-size:13px;margin:0 0 4px;">⚠ {{ field.label }}: {{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label for="fullname">Full name</label>
+                    <input type="text" id="fullname" name="full_name"
+                           placeholder="Full name"
+                           value="{{ request.POST.full_name }}" required>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email"
+                           placeholder="name@mycompany.com"
+                           value="{{ request.POST.email }}" required>
+                </div>
+
+                <!-- Phone -->
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" name="phone"
+                           value="{{ request.POST.phone }}">
+                </div>
+
+                <!-- Register Type -->
+                <div class="form-group">
+                    <label for="register-type">Register type</label>
+                    <select id="register-type" name="register_type" required onchange="onTypeChange(this.value)">
+                        <option value="">— Select type —</option>
+                        <option value="client"   {% if request.POST.register_type == 'client'   %}selected{% endif %}>Client</option>
+                        <option value="employee" {% if request.POST.register_type == 'employee' %}selected{% endif %}>Employee</option>
+                    </select>
+                </div>
+
+                <!-- Department — Employee only, shown after type=employee -->
+                <div class="form-group" id="dept-group" style="display:none;">
+                    <label for="department">Department</label>
+                    <select id="department" name="department" onchange="onDeptChange(this.value)">
+                        <option value="">— Select Department —</option>
+                        {% for dept in form.fields.department.queryset %}
+                        <option value="{{ dept.id }}"
+                            {% if request.POST.department == dept.id|stringformat:"s" %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Skill / Category — Employee only, shown after department is selected -->
+                <div class="form-group" id="skill-group" style="display:none;">
+                    <label for="skill">Skill / Category</label>
+                    <select id="skill" name="skill">
+                        <option value="">— Select Skill —</option>
+                    </select>
+                </div>
+
+                <!-- CV Upload — Employee only, mandatory -->
+                <div class="form-group" id="cv-group" style="display:none;">
+                    <label for="cv">CV / Resume <span style="color:#e53935;font-size:12px;">*&nbsp;required</span></label>
+                    <div class="file-input-wrapper" id="cv-wrapper" style="border-color:var(--c-t2);">
+                        <span id="cv-label">Upload CV (PDF, DOC, DOCX)</span>
+                        <input type="file" id="cv" name="cv" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="onCvChange(this)">
+                    </div>
+                </div>
+
+                <!-- Company — Client only -->
+                <div class="form-group" id="company-group" style="display:none;">
+                    <label for="company">Company <span style="font-size:11px;color:var(--c-tm);">(optional)</span></label>
+                    <input type="text" id="company" name="company"
+                           placeholder="Your company name"
+                           value="{{ request.POST.company }}">
+                </div>
+
+                <!-- National ID Upload — Client only, mandatory -->
+                <div class="form-group" id="natid-group" style="display:none;">
+                    <label for="national_id">ID Document <span style="color:#e53935;font-size:12px;">*&nbsp;required</span>
+                        <span style="font-size:11px;color:var(--c-tm);font-weight:400;"> — Aadhaar / Passport / Driver's Licence</span>
+                    </label>
+                    <div class="file-input-wrapper" id="natid-wrapper" style="border-color:var(--c-t2);">
+                        <span id="natid-label">Upload ID Document (JPG, PNG, PDF)</span>
+                        <input type="file" id="national_id" name="national_id"
+                               accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                               onchange="onNatIdChange(this)">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <!-- Re-type Password -->
+                <div class="form-group">
+                    <label for="retype-password">Re-type Password</label>
+                    <input type="password" id="retype-password" name="retype_password" required>
+                </div>
+
+                <!-- Profile Image -->
+                <div class="form-group">
+                    <label for="profile-image">Profile image <span style="font-size:11px;color:var(--c-tm);">(optional)</span></label>
+                    <div class="file-input-wrapper">
+                        Attach
+                        <input type="file" id="profile-image" name="profile_image" accept="image/*">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-register">REGISTER NOW</button>
+
+                <p class="login-link">
+                    Already have an account? <a href="{% url 'login' %}">Login</a>
+                </p>
+            </form>
+
+            <script>
+            var SKILLS_BY_DEPT = {{ skills_by_dept_json|safe }};
+
+            function onTypeChange(val) {
+                // Hide all conditional groups
+                var ids = ['dept-group','skill-group','cv-group','company-group','natid-group'];
+                ids.forEach(function(id){ document.getElementById(id).style.display = 'none'; });
+
+                // Clear dependent selects
+                document.getElementById('department').value = '';
+                document.getElementById('skill').innerHTML = '<option value="">— Select Skill —</option>';
+
+                if (val === 'employee') {
+                    document.getElementById('dept-group').style.display = 'block';
+                } else if (val === 'client') {
+                    document.getElementById('company-group').style.display = 'block';
+                    document.getElementById('natid-group').style.display = 'block';
+                }
+            }
+
+            function onDeptChange(deptId) {
+                var sg       = document.getElementById('skill-group');
+                var cvg      = document.getElementById('cv-group');
+                var skillSel = document.getElementById('skill');
+                skillSel.innerHTML = '<option value="">— Select Skill —</option>';
+
+                if (!deptId) {
+                    sg.style.display  = 'none';
+                    cvg.style.display = 'none';
+                    return;
+                }
+
+                // Always show CV upload when a department is selected
+                cvg.style.display = 'block';
+
+                // Show skill dropdown only if this department has skills
+                var skills = SKILLS_BY_DEPT[String(deptId)];
+                if (skills && skills.length) {
+                    skills.forEach(function(sk) {
+                        var opt = document.createElement('option');
+                        opt.value = sk.id;
+                        opt.textContent = sk.name;
+                        skillSel.appendChild(opt);
+                    });
+                    sg.style.display = 'block';
+                } else {
+                    sg.style.display = 'none';
+                }
+            }
+
+            function onCvChange(input) {
+                var label = document.getElementById('cv-label');
+                var wrapper = document.getElementById('cv-wrapper');
+                if (input.files && input.files[0]) {
+                    label.textContent = '📄 ' + input.files[0].name;
+                    wrapper.style.borderColor = '#2196F3';
+                    wrapper.style.background = '#f0f7ff';
+                } else {
+                    label.textContent = 'Upload CV (PDF, DOC, DOCX)';
+                    wrapper.style.borderColor = '#333';
+                    wrapper.style.background = '#fff';
+                }
+            }
+
+            function onNatIdChange(input) {
+                var label = document.getElementById('natid-label');
+                var wrapper = document.getElementById('natid-wrapper');
+                if (input.files && input.files[0]) {
+                    label.textContent = '🪪 ' + input.files[0].name;
+                    wrapper.style.borderColor = '#2196F3';
+                    wrapper.style.background = '#f0f7ff';
+                } else {
+                    label.textContent = 'Upload ID Document (JPG, PNG, PDF)';
+                    wrapper.style.borderColor = '#333';
+                    wrapper.style.background = '#fff';
+                }
+            }
+
+            // On page load: restore state if form was submitted with errors
+            (function() {
+                var typeVal = document.getElementById('register-type').value;
+                if (typeVal) {
+                    onTypeChange(typeVal);
+                    if (typeVal === 'employee') {
+                        var deptVal = document.getElementById('department').value;
+                        if (deptVal) {
+                            onDeptChange(deptVal);
+                            // Restore selected skill
+                            var prevSkill = '{{ request.POST.skill }}';
+                            if (prevSkill) {
+                                var skillSel = document.getElementById('skill');
+                                for (var i = 0; i < skillSel.options.length; i++) {
+                                    if (skillSel.options[i].value === prevSkill) {
+                                        skillSel.options[i].selected = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            })();
+            </script>
+
+        </div>
+    </div>
+
+    <!-- Floating Chat Icon -->
+{% endblock %}

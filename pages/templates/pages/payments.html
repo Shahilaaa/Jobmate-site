@@ -1,0 +1,432 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments - JobMate</title>
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page-payments.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+    <style>
+        /* ── Summary cards ── */
+        .pay-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:28px; }
+        .pay-stat { background:#fff; border-radius:14px; border:1px solid var(--c-bdr); padding:16px 18px; box-shadow:var(--sh1); position:relative; overflow:hidden; }
+        .pay-stat::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:14px 14px 0 0; }
+        .pay-stat.task::before  { background:linear-gradient(90deg,var(--c-b5),var(--c-b3)); }
+        .pay-stat.proj::before  { background:linear-gradient(90deg,#16A34A,#6EE7B7); }
+        .pay-stat.total::before { background:linear-gradient(90deg,var(--c-b8),#7C3AED); }
+        .pay-stat-label { font-size:11px; font-weight:700; color:var(--c-tm); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+        .pay-stat-val   { font-size:22px; font-weight:900; color:var(--c-t1); line-height:1; }
+        .pay-stat-sub   { font-size:11px; color:var(--c-tm); margin-top:5px; display:flex; gap:8px; }
+        .pay-stat-sub .ok  { color:var(--c-green); }
+        .pay-stat-sub .pend{ color:var(--c-amber); }
+
+        /* ── Section header ── */
+        .pay-section { margin-bottom:32px; }
+        .pay-section-head {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:14px; gap:12px; flex-wrap:wrap;
+        }
+        .pay-section-title {
+            display:flex; align-items:center; gap:10px;
+            font-size:15px; font-weight:800; color:var(--c-t1);
+        }
+        .pay-section-badge {
+            background:var(--c-b1); color:var(--c-b8);
+            padding:3px 10px; border-radius:20px;
+            font-size:11px; font-weight:700;
+        }
+        .pay-section-badge.green { background:var(--c-gbg); color:var(--c-green); }
+
+        /* ── Table ── */
+        .pay-table-wrap {
+            background:#fff; border-radius:14px;
+            border:1px solid var(--c-bdr); overflow:hidden;
+            box-shadow:var(--sh1);
+        }
+        .pay-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .pay-table thead tr { background:var(--c-b0); border-bottom:2px solid var(--c-bdr); }
+        .pay-table th {
+            padding:11px 16px; font-size:11px; font-weight:700;
+            color:var(--c-tm); text-transform:uppercase; letter-spacing:.5px;
+            text-align:left; white-space:nowrap;
+        }
+        .pay-table th.right { text-align:right; }
+        .pay-table th.center{ text-align:center; }
+        .pay-table tbody tr { border-bottom:1px solid var(--c-surf2); transition:background .12s; }
+        .pay-table tbody tr:last-child { border-bottom:none; }
+        .pay-table tbody tr:hover { background:var(--c-b0); }
+        .pay-table td { padding:13px 16px; vertical-align:middle; }
+        .pay-table td.right  { text-align:right; }
+        .pay-table td.center { text-align:center; }
+
+        /* ── Status circle ── */
+        .pay-circle {
+            width:30px; height:30px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; font-weight:800; flex-shrink:0;
+        }
+        .pay-circle.paid    { background:var(--c-gbg); color:var(--c-green); }
+        .pay-circle.pending { background:var(--c-abg); color:var(--c-amber); }
+        .pay-circle.failed  { background:var(--c-rbg); color:var(--c-red); }
+
+        /* ── Amount cell ── */
+        .pay-amount      { font-weight:800; color:var(--c-t1); font-size:13px; }
+        .pay-amount-sub  { font-size:10px; color:#9CA3AF; margin-top:2px; }
+        .pay-emp-gets    { font-weight:800; color:var(--c-green); font-size:12px; }
+        .pay-admin-comm  { font-weight:700; color:#e53935; font-size:12px; }
+        .pay-admin-pct   { font-size:10px; color:var(--c-tm); font-weight:400; }
+
+        /* ── Status pill ── */
+        .pay-pill {
+            display:inline-flex; align-items:center; gap:4px;
+            padding:4px 11px; border-radius:20px;
+            font-size:11px; font-weight:700; white-space:nowrap;
+        }
+        .pay-pill.paid    { background:var(--c-gbg); color:var(--c-green); }
+        .pay-pill.pending { background:var(--c-abg); color:var(--c-amber); }
+
+        /* ── Action buttons ── */
+        .pay-action { display:flex; flex-direction:column; gap:5px; }
+        .pay-btn-pay {
+            display:inline-flex; align-items:center; gap:5px;
+            background:var(--c-b5); color:#fff;
+            padding:8px 14px; border-radius:8px;
+            font-size:12px; font-weight:700; text-decoration:none;
+            transition:background .15s; white-space:nowrap;
+        }
+        .pay-btn-pay:hover { background:var(--c-b8); }
+        .pay-btn-recalc {
+            display:inline-flex; align-items:center; gap:4px;
+            background:#F3F4F6; color:#374151;
+            padding:6px 11px; border-radius:8px;
+            font-size:11px; font-weight:600; text-decoration:none;
+            transition:background .15s;
+        }
+        .pay-btn-recalc:hover { background:#E5E7EB; }
+
+        /* ── Empty state ── */
+        .pay-empty { text-align:center; padding:40px 20px; color:var(--c-tm); }
+        .pay-empty-icon { font-size:36px; margin-bottom:10px; }
+        .pay-empty-title{ font-size:15px; font-weight:600; color:var(--c-tm); }
+        .pay-empty-sub  { font-size:13px; margin-top:4px; }
+
+        /* ── User cell ── */
+        .pay-user { display:flex; align-items:center; gap:8px; }
+        .pay-avatar {
+            width:28px; height:28px; border-radius:50%;
+            background:linear-gradient(135deg,var(--c-b5),var(--c-b8));
+            color:#fff; display:flex; align-items:center; justify-content:center;
+            font-size:11px; font-weight:700; flex-shrink:0;
+        }
+        .pay-avatar.green { background:linear-gradient(135deg,#16A34A,#15803D); }
+    </style>
+</head>
+<body>
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile-mini">
+            <div class="user-info">
+                <div class="user-avatar-mini" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                    {% if current_user_avatar_url %}
+                        <img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                    {% else %}
+                        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-weight:700;">{{ request.user.first_name|first|default:"U" }}</span>
+                    {% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span style="color:var(--c-tm);font-size:14px;">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'client_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'myprofile' %}"><span class="nav-icon">👤</span> My Profile</a></li>
+            <li><a href="{% url 'works' %}"><span class="nav-icon">💼</span> Works</a></li>
+            <li><a href="{% url 'client_projects' %}"><span class="nav-icon">📁</span> Projects</a></li>
+            <li><a href="{% url 'employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+            <li><a href="{% url 'payments' %}" class="active"><span class="nav-icon">💳</span> Payments</a></li>
+            <li><a href="{% url 'bank_detail' %}"><span class="nav-icon">🏦</span> Payment Details</a></li>
+            <li><a href="{% url 'support' %}"><span class="nav-icon">⚙️</span> Support</a></li>
+            <li><a href="{% url 'notifications' %}"><span class="nav-icon">🔔</span> Notifications{% with cnt=unread_notifications %}{% if cnt %}<span class="nav-notif-badge">{% if cnt > 99 %}99+{% else %}{{ cnt }}{% endif %}</span>{% endif %}{% endwith %}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1 class="page-title">Payments</h1>
+            <div class="header-actions">
+                <div class="search-box">
+                    <form method="get" action="" data-nlp-search="payments" style="display:flex;width:100%;position:relative;">
+                        <input type="text" class="search-input" placeholder="Search payments..." name="q" value="{{ q|default:'' }}">
+                        <button type="submit" class="nlp-submit-btn" title="Search">🔍</button>
+                    </form>
+                </div>
+                {% include 'pages/includes/notif_icon.html' %}
+            </div>
+        </div>
+
+        {% if messages %}{% for msg in messages %}
+        <div class="{% if msg.tags == 'success' %}msg-success{% else %}msg-error{% endif %}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+
+        {% if q %}
+        <div class="nlp-result-banner">
+            <span>🤖 AI Search: <strong>{{ q }}</strong></span>
+            <a href="?" class="nlp-clear-btn">✕ Clear</a>
+        </div>
+        {% endif %}
+
+        <!-- ── Summary Cards ── -->
+        <div class="pay-summary">
+            <div class="pay-stat task">
+                <div class="pay-stat-label">💼 Task Payments</div>
+                <div class="pay-stat-val">₹{{ task_total|floatformat:0 }}</div>
+                <div class="pay-stat-sub">
+                    <span class="ok">✓ ₹{{ task_paid|floatformat:0 }}</span>
+                    <span class="pend">⏳ ₹{{ task_pending|floatformat:0 }}</span>
+                </div>
+            </div>
+            <div class="pay-stat proj">
+                <div class="pay-stat-label">📁 Project Payments</div>
+                <div class="pay-stat-val">₹{{ proj_total|floatformat:0 }}</div>
+                <div class="pay-stat-sub">
+                    <span class="ok">✓ ₹{{ proj_paid|floatformat:0 }}</span>
+                    <span class="pend">⏳ ₹{{ proj_pending|floatformat:0 }}</span>
+                </div>
+            </div>
+            <div class="pay-stat total">
+                <div class="pay-stat-label">🏆 Grand Total</div>
+                <div class="pay-stat-val">₹{{ grand_total|floatformat:0 }}</div>
+                <div class="pay-stat-sub">
+                    <span>{{ payments|length }} task{{ payments|length|pluralize }}</span>
+                    <span>·</span>
+                    <span>{{ proj_payments|length }} project{{ proj_payments|length|pluralize }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             TABLE 1 — TASK PAYMENTS
+             Amount = hours worked × hourly rate
+        ══════════════════════════════════════ -->
+        <div class="pay-section">
+            <div class="pay-section-head">
+                <div class="pay-section-title">
+                    💼 Task Payments
+                    <span class="pay-section-badge">{{ payments|length }} record{{ payments|length|pluralize }}</span>
+                </div>
+                <div style="font-size:12px;color:var(--c-tm);">Amount = Hours Worked × Hourly Rate</div>
+            </div>
+
+            <div class="pay-table-wrap">
+                <table class="pay-table">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;"></th>
+                            <th>Task</th>
+                            <th>Employee</th>
+                            <th class="right">Amount</th>
+                            <th class="right">Employee Gets</th>
+                            <th class="right">Admin (20%)</th>
+                            <th class="center">Status</th>
+                            <th class="center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in payments %}
+                        <tr>
+                            <td>
+                                <div class="pay-circle {% if p.status == 'paid' %}paid{% elif p.status == 'failed' %}failed{% else %}pending{% endif %}">
+                                    {% if p.status == 'paid' %}✓{% elif p.status == 'failed' %}⚠{% else %}⏱{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;color:var(--c-t1);">{{ p.task.title|truncatechars:32 }}</div>
+                            </td>
+                            <td>
+                                <div class="pay-user">
+                                    <div class="pay-avatar">{{ p.task.employee.profile.user.first_name|first|upper|default:"E" }}</div>
+                                    <span style="color:var(--c-t2);">{{ p.task.employee.profile.user.get_full_name|default:p.task.employee.profile.user.username|truncatechars:20 }}</span>
+                                </div>
+                            </td>
+                            <td class="right">
+                                <div class="pay-amount">₹{{ p.amount|floatformat:2 }}</div>
+                                <div class="pay-amount-sub">{{ p.task.total_hours }}h × ₹{{ p.task.employee.hourly_rate }}/hr</div>
+                            </td>
+                            <td class="right">
+                                <div class="pay-emp-gets">
+                                    {% if p.employee_payout %}₹{{ p.employee_payout|floatformat:2 }}{% else %}₹{% widthratio p.amount 10 8 %}{% endif %}
+                                </div>
+                            </td>
+                            <td class="right">
+                                <div class="pay-admin-comm">
+                                    {% if p.admin_commission %}₹{{ p.admin_commission|floatformat:2 }}{% else %}₹{% widthratio p.amount 10 2 %}{% endif %}
+                                </div>
+                                <div class="pay-amount-sub">(20%)</div>
+                            </td>
+                            <td class="center">
+                                <span class="pay-pill {% if p.status == 'paid' %}paid{% else %}pending{% endif %}">
+                                    {% if p.status == 'paid' %}✓ Paid{% else %}⏳ Pending{% endif %}
+                                </span>
+                            </td>
+                            <td class="center">
+                                {% if p.status != 'paid' %}
+                                <div class="pay-action" style="align-items:center;">
+                                    <a href="{% url 'payment_gateway' p.id %}" class="pay-btn-pay">💳 Pay Now</a>
+                                    <a href="{% url 'fix_payment_amount' p.id %}"
+                                       onclick="return confirm('Recalculate as {{ p.task.total_hours }}h × ₹{{ p.task.employee.hourly_rate }}/hr?')"
+                                       class="pay-btn-recalc">🔄 Recalculate</a>
+                                </div>
+                                {% else %}
+                                <span style="font-size:11px;color:var(--c-tm);">{{ p.paid_at|date:"j M Y"|default:"Paid" }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8">
+                            <div class="pay-empty">
+                                <div class="pay-empty-icon">💼</div>
+                                <div class="pay-empty-title">No task payments yet</div>
+                                <div class="pay-empty-sub">Payments appear here when tasks are marked complete.</div>
+                            </div>
+                        </td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             TABLE 2 — PROJECT PAYMENTS
+             Amount = Client-agreed project budget
+        ══════════════════════════════════════ -->
+        <div class="pay-section">
+            <div class="pay-section-head">
+                <div class="pay-section-title">
+                    📁 Project Payments
+                    <span class="pay-section-badge green">{{ proj_payments|length }} record{{ proj_payments|length|pluralize }}</span>
+                </div>
+                <div style="font-size:12px;color:var(--c-tm);">Amount = Client-agreed project budget</div>
+            </div>
+
+            <div class="pay-table-wrap">
+                <table class="pay-table">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;"></th>
+                            <th>Project</th>
+                            <th>Employee</th>
+                            <th class="right">Budget</th>
+                            <th class="right">Employee Gets</th>
+                            <th class="right">Admin (20%)</th>
+                            <th class="center">Status</th>
+                            <th class="center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pp in proj_payments %}
+                        <tr>
+                            <td>
+                                <div class="pay-circle {% if pp.status == 'paid' %}paid{% else %}pending{% endif %}">
+                                    {% if pp.status == 'paid' %}✓{% else %}⏱{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;color:var(--c-t1);">{{ pp.project.title|truncatechars:32 }}</div>
+                            </td>
+                            <td>
+                                <div class="pay-user">
+                                    <div class="pay-avatar green">{{ pp.employee.profile.user.first_name|first|upper|default:"E" }}</div>
+                                    <span style="color:var(--c-t2);">{{ pp.employee.profile.user.get_full_name|default:pp.employee.profile.user.username|truncatechars:20 }}</span>
+                                </div>
+                            </td>
+                            <td class="right">
+                                <div class="pay-amount">₹{{ pp.amount|floatformat:2 }}</div>
+                                <div class="pay-amount-sub">Client Budget</div>
+                            </td>
+                            <td class="right">
+                                <div class="pay-emp-gets">
+                                    {% if pp.employee_payout %}₹{{ pp.employee_payout|floatformat:2 }}{% else %}₹{% widthratio pp.amount 10 8 %}{% endif %}
+                                </div>
+                            </td>
+                            <td class="right">
+                                <div class="pay-admin-comm">
+                                    {% if pp.admin_commission %}₹{{ pp.admin_commission|floatformat:2 }}{% else %}₹{% widthratio pp.amount 10 2 %}{% endif %}
+                                </div>
+                                <div class="pay-amount-sub">(20%)</div>
+                            </td>
+                            <td class="center">
+                                <span class="pay-pill {% if pp.status == 'paid' %}paid{% else %}pending{% endif %}">
+                                    {% if pp.status == 'paid' %}✓ Paid{% else %}⏳ Pending{% endif %}
+                                </span>
+                            </td>
+                            <td class="center">
+                                {% if pp.status != 'paid' %}
+                                <a href="{% url 'project_payment_gateway' pp.id %}" class="pay-btn-pay">💳 Pay Now</a>
+                                {% else %}
+                                <span style="font-size:11px;color:var(--c-tm);">{{ pp.created_at|date:"j M Y" }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8">
+                            <div class="pay-empty">
+                                <div class="pay-empty-icon">📁</div>
+                                <div class="pay-empty-title">No project payments yet</div>
+                                <div class="pay-empty-sub">Payments appear here when projects are marked complete.</div>
+                            </div>
+                        </td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+{% include 'pages/includes/notif_live.html' %}
+
+<!-- Chatbot -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">🤖<div id="jmDot">1</div></button>
+<div id="jmBox">
+  <div id="jmHead"><div class="av">🤖</div><div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online — Ask me anything</div></div><button id="jmX" onclick="jmOpen()" title="Close">✕</button></div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips">
+    <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+    <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+    <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+  </div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo" title="Send">&#10148;</button></div>
+</div>
+<script>
+(function(){
+  var hist=[],open=false;
+  function hhmmss(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function bubble(txt,mine){var msgs=document.getElementById('jmMsgs');var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}var inner=document.createElement('div');var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;}
+  function typing(show){document.getElementById('jmTyping').style.display=show?'flex':'none';}
+  window.jmOpen=function(){open=!open;document.getElementById('jmBox').classList.toggle('on',open);document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';if(open&&!document.getElementById('jmMsgs').children.length){bubble('Hi! I am the JobMate AI assistant. How can I help you today?',false);}};
+  window.jmAsk=function(txt){document.getElementById('jmChips').style.display='none';document.getElementById('jmInp').value=txt;jmSend();};
+  function jmSend(){var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;inp.value='';document.getElementById('jmChips').style.display='none';bubble(msg,true);hist.push({role:'user',content:msg});typing(true);fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})}).then(function(r){return r.json();}).then(function(d){typing(false);bubble(d.reply||'Sorry, no response.',false);hist.push({role:'assistant',content:d.reply||'');}).catch(function(){typing(false);bubble('Sorry, could not connect.',false);});}
+  document.getElementById('jmGo').addEventListener('click',jmSend);
+  document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});
+  document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});
+  setTimeout(function(){if(!open){var dot=document.getElementById('jmDot');if(dot)dot.style.display='flex';}},4000);
+})();
+</script>
+<script src="{% static 'js/nlp-search.js' %}"></script>
+</body>
+</html>

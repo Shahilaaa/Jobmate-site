@@ -1,0 +1,528 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - JobMate</title>    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page-works.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <style>
+        /* ── Client Dashboard extra styles ── */
+        .stats-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+        @media(max-width:1100px){ .stats-grid-4{ grid-template-columns:repeat(2,1fr); } }
+        @media(max-width:600px){  .stats-grid-4{ grid-template-columns:1fr; } }
+        .cd-stat-card {
+            background:var(--c-white); border-radius:14px; padding:20px 22px;
+            border:1px solid var(--c-bdr); box-shadow:0 2px 8px rgba(0,0,0,.04);
+            display:flex; flex-direction:column; gap:10px;
+        }
+        .cd-stat-top { display:flex; justify-content:space-between; align-items:flex-start; }
+        .cd-stat-label { font-size:13px; font-weight:700; color:var(--c-tm); }
+        .cd-stat-sub   { font-size:11px; color:var(--c-tm); margin-top:3px; }
+        .cd-stat-icon  { width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
+        .cd-stat-icon.blue   { background:var(--c-b1); }
+        .cd-stat-icon.orange { background:var(--c-white)3e0; }
+        .cd-stat-icon.green  { background:var(--c-b0); }
+        .cd-stat-icon.purple { background:#F3E5F5; }
+        .cd-stat-value { font-size:28px; font-weight:800; color:var(--c-t1); line-height:1; }
+        .cd-stat-pill  { font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--c-page);color:var(--c-tm); }
+        /* ── Two-column content grid ── */
+        .cd-content-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+        @media(max-width:900px){ .cd-content-grid{ grid-template-columns:1fr; } }
+        .cd-card { background:var(--c-white);border-radius:14px;border:1px solid var(--c-bdr);overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+        .cd-card-header { display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--c-surf2); }
+        .cd-card-title  { font-size:15px;font-weight:700;color:var(--c-t1); }
+        .cd-card-link   { font-size:12px;color:var(--c-b5);text-decoration:none;font-weight:600; }
+        .cd-table       { width:100%;border-collapse:collapse; }
+        .cd-table th    { font-size:11px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.4px;padding:10px 20px;text-align:left;border-bottom:1px solid var(--c-surf2); }
+        .cd-table td    { font-size:13px;color:var(--c-t2);padding:11px 20px;border-bottom:1px solid #fafafa;vertical-align:middle; }
+        .cd-table tr:last-child td { border-bottom:none; }
+        .cd-table tr:hover td { background:#fafbfc; }
+        .cd-badge { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:700; }
+        .cd-badge.pending    { background:var(--c-white)3e0;color:#f57c00; }
+        .cd-badge.active     { background:var(--c-b1);color:#1976d2; }
+        .cd-badge.submitted  { background:#F3E5F5;color:#7b1fa2; }
+        .cd-badge.completed  { background:var(--c-b0);color:var(--c-green); }
+        .cd-badge.rejected   { background:var(--c-rbg);color:var(--c-red); }
+        .cd-badge.assigned   { background:var(--c-b1);color:#1976d2; }
+        .cd-badge.work_submitted { background:var(--c-white)8e1;color:#f57f17; }
+        .cd-badge.closed     { background:var(--c-page);color:var(--c-tm); }
+        /* ── Analytics card ── */
+        .cd-analytics { background:var(--c-white);border-radius:14px;border:1px solid var(--c-bdr);overflow:hidden;margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+        @keyframes cdModalIn { from{opacity:0;transform:translateY(-10px) scale(.97)} to{opacity:1;transform:none} }
+        /* ── Status circle ── */
+        .status-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 12px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .status-icon.pending { background: #f5f5f5; color: #9e9e9e; }
+    </style>
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile-mini">
+            <div class="user-info">
+                <div class="user-avatar-mini" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                    {% if current_user_avatar_url %}
+                        <img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                    {% else %}
+                        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-weight:700;">{{ request.user.first_name|first|default:"U" }}</span>
+                    {% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span style="color:var(--c-tm);font-size:14px;">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'client_dashboard' %}" class="active"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'myprofile' %}"><span class="nav-icon">👤</span> My Profile</a></li>
+            <li><a href="{% url 'works' %}"><span class="nav-icon">💼</span> Works</a></li>
+            <li><a href="{% url 'client_projects' %}"><span class="nav-icon">📁</span> Projects</a></li>
+            <li><a href="{% url 'employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+            <li><a href="{% url 'payments' %}"><span class="nav-icon">💳</span> Payments</a></li>
+            <li><a href="{% url 'support' %}"><span class="nav-icon">⚙️</span> Support</a></li>
+            <li><a href="{% url 'notifications' %}"><span class="nav-icon">🔔</span> Notifications{% with cnt=unread_notifications %}{% if cnt %}<span class="nav-notif-badge">{% if cnt > 99 %}99+{% else %}{{ cnt }}{% endif %}</span>{% endif %}{% endwith %}</a></li>
+            <li><a href="{% url 'bank_detail' %}"><span class="nav-icon">🏦</span> Bank Details</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- ── Main Content ── -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="content-header">
+            <h1 class="page-title">Dashboard</h1>
+            <div class="header-actions">
+                <form method="get" action="" style="display:flex;align-items:center;gap:0;background:var(--c-page);border-radius:10px;padding:4px 12px;border:1px solid #eee;">
+                    <span style="color:var(--c-tm);font-size:14px;margin-right:6px;">🔍</span>
+                    <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Search tasks & projects…"
+                        style="border:none;background:transparent;outline:none;font-size:13px;width:200px;font-family:inherit;">
+                </form>
+                {% include 'pages/includes/notif_icon.html' %}
+            </div>
+        </div>
+
+        {% if q %}
+        <div class="nlp-result-banner">
+            <span>🔍 Searching: <strong>{{ q }}</strong></span>
+            <a href="?" class="nlp-clear-btn">✕ Clear</a>
+        </div>
+        {% endif %}
+
+        <!-- ── Stat Cards ── -->
+        <div class="stats-grid-4">
+            <!-- Tasks -->
+            <div class="cd-stat-card">
+                <div class="cd-stat-top">
+                    <div>
+                        <div class="cd-stat-label">Total Tasks</div>
+                        <div class="cd-stat-sub">{{ stats.task_completed }} done · {{ stats.task_active }} active</div>
+                    </div>
+                    <div class="cd-stat-icon blue">📋</div>
+                </div>
+                <div class="cd-stat-value">{{ stats.task_total }}</div>
+                <div><span class="cd-stat-pill">{{ stats.task_pending }} pending</span></div>
+            </div>
+            <!-- Projects -->
+            <div class="cd-stat-card">
+                <div class="cd-stat-top">
+                    <div>
+                        <div class="cd-stat-label">Total Projects</div>
+                        <div class="cd-stat-sub">{{ stats.proj_completed }} done · {{ stats.proj_active }} active</div>
+                    </div>
+                    <div class="cd-stat-icon orange">📁</div>
+                </div>
+                <div class="cd-stat-value">{{ stats.proj_total }}</div>
+                <div><span class="cd-stat-pill">posted projects</span></div>
+            </div>
+            <!-- Task Spend -->
+            <div class="cd-stat-card">
+                <div class="cd-stat-top">
+                    <div>
+                        <div class="cd-stat-label">Task Spend</div>
+                        <div class="cd-stat-sub">Payments for completed tasks</div>
+                    </div>
+                    <div class="cd-stat-icon green">💳</div>
+                </div>
+                <div class="cd-stat-value" style="font-size:22px;">₹{{ stats.task_spent|floatformat:0 }}</div>
+                <div><span class="cd-stat-pill">task payments</span></div>
+            </div>
+            <!-- Total Spend -->
+            <div class="cd-stat-card">
+                <div class="cd-stat-top">
+                    <div>
+                        <div class="cd-stat-label">Total Spend</div>
+                        <div class="cd-stat-sub">Tasks + Projects combined</div>
+                    </div>
+                    <div class="cd-stat-icon purple">💰</div>
+                </div>
+                <div class="cd-stat-value" style="font-size:22px;">₹{{ stats.total_spent|floatformat:0 }}</div>
+                <div><span class="cd-stat-pill">₹{{ stats.proj_spent|floatformat:0 }} proj</span></div>
+            </div>
+        </div>
+
+        <!-- ── Tasks & Projects Tables ── -->
+        <div class="cd-content-grid">
+            <!-- Tasks -->
+            <div class="cd-card">
+                <div class="cd-card-header">
+                    <span class="cd-card-title">📋 Recent Tasks</span>
+                    <a href="{% url 'works' %}" class="cd-card-link">View all →</a>
+                </div>
+                <table class="cd-table">
+                    <thead><tr><th>Task</th><th>Employee</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for t in tasks %}
+                        <tr>
+                            <td style="font-weight:600;max-width:140px;">
+                                <a href="{% url 'worksinner_id' t.id %}" style="color:inherit;text-decoration:none;">{{ t.title|truncatechars:24 }}</a>
+                            </td>
+                            <td style="color:var(--c-tm);font-size:12px;">
+                                {% if t.employee %}{{ t.employee.profile.user.get_full_name|truncatechars:18 }}{% else %}—{% endif %}
+                            </td>
+                            <td>{% if t.status == 'completed' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b0);color:var(--c-green);">✓</span>
+                                    {% elif t.status == 'in_progress' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b1);color:var(--c-b8);">▶</span>
+                                    {% elif t.status == 'submitted' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-white)3e0;color:var(--c-amber);">↑</span>
+                                    {% elif t.status == 'rejected' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-rbg);color:var(--c-red);">✕</span>
+                                    {% elif t.status == 'pending' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-tm);">⏱</span>
+                                    {% else %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-tm);">●</span>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" style="text-align:center;color:var(--c-tm);padding:20px;">No tasks yet. <a href="{% url 'task' %}" style="color:var(--c-b5);">Create one →</a></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Projects -->
+            <div class="cd-card">
+                <div class="cd-card-header">
+                    <span class="cd-card-title">📁 Recent Projects</span>
+                    <a href="{% url 'client_projects' %}" class="cd-card-link">View all →</a>
+                </div>
+                <table class="cd-table">
+                    <thead><tr><th>Project</th><th>Budget</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for p in projects %}
+                        <tr>
+                            <td style="font-weight:600;max-width:140px;">{{ p.title|truncatechars:24 }}</td>
+                            <td style="color:var(--c-green);font-weight:700;font-size:12px;">₹{{ p.budget|floatformat:0 }}</td>
+                            <td>
+                                    {% if p.status == 'completed' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b0);color:var(--c-green);">✓</span>
+                                    {% elif p.status == 'assigned' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b1);color:var(--c-b8);">▶</span>
+                                    {% elif p.status == 'work_submitted' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-white)3e0;color:var(--c-amber);">↑</span>
+                                    {% elif p.status == 'closed' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-t3);">✕</span>
+                                    {% elif p.status == 'active' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b0);color:var(--c-green);">●</span>
+                                    {% else %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-tm);">●</span>{% endif %}
+                                </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" style="text-align:center;color:var(--c-tm);padding:20px;">No projects yet. <a href="{% url 'client_projects' %}" style="color:var(--c-b5);">Create one →</a></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Analytics Chart Card ── -->
+        <div class="cd-analytics">
+            <!-- Header + toggles -->
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px 14px;border-bottom:1px solid var(--c-surf2);flex-wrap:wrap;gap:12px;">
+                <div>
+                    <h2 style="font-size:15px;font-weight:700;color:var(--c-t1);margin:0 0 2px;">Analytics Overview</h2>
+                    <p style="font-size:12px;color:var(--c-tm);margin:0;">Tasks · Projects · Spend — switch period</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <div style="display:flex;gap:3px;background:var(--c-surf2);padding:4px;border-radius:10px;">
+                        <button class="cdBtn" data-period="daily"   style="padding:7px 18px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--c-t3);transition:all .2s;">Daily</button>
+                        <button class="cdBtn" data-period="weekly"  style="padding:7px 18px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:var(--c-b5);color:#fff;box-shadow:0 2px 8px rgba(33,150,243,.4);transition:all .2s;">Weekly</button>
+                        <button class="cdBtn" data-period="monthly" style="padding:7px 18px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--c-t3);transition:all .2s;">Monthly</button>
+                    </div>
+                    <select id="cdYearSelect" onchange="cdOnYearChange(this.value)"
+                        style="padding:7px 12px;border:1px solid var(--c-bdr);border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;color:var(--c-t2);background:var(--c-white);cursor:pointer;outline:none;"></select>
+                    <select id="cdMonthSelect" onchange="cdOnMonthChange(this.value)"
+                        style="display:none;padding:7px 12px;border:1px solid var(--c-bdr);border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;color:var(--c-t2);background:var(--c-white);cursor:pointer;outline:none;">
+                        <option value="all">All months</option>
+                        <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+                        <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+                        <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+                        <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tasks + Projects bar chart -->
+            <div style="padding:20px 24px 4px;border-bottom:1px solid var(--c-surf2);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div>
+                        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0;">Tasks & Projects</p>
+                        <p style="font-size:11px;color:var(--c-tm);margin:2px 0 0;">Created per period</p>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <span style="background:var(--c-b1);color:var(--c-b6);padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;">📋 Tasks</span>
+                        <span style="background:var(--c-white)3e0;color:var(--c-amber);padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;">📁 Projects</span>
+                    </div>
+                </div>
+                <div style="position:relative;height:190px;width:100%;"><canvas id="cdTaskChart"></canvas></div>
+            </div>
+
+            <!-- Spend line chart -->
+            <div style="padding:20px 24px 4px;border-bottom:1px solid var(--c-surf2);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div>
+                        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0;">Total Spend</p>
+                        <p style="font-size:11px;color:var(--c-tm);margin:2px 0 0;">Tasks + Projects combined</p>
+                    </div>
+                    <span style="background:var(--c-b0);color:var(--c-green);padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;">💰 Spend</span>
+                </div>
+                <div style="position:relative;height:190px;width:100%;"><canvas id="cdRevChart"></canvas></div>
+            </div>
+
+            <!-- Task Status doughnut -->
+            <div style="padding:20px 24px;border-bottom:1px solid #f2f2f2;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+                <div style="position:relative;flex-shrink:0;">
+                    <canvas id="cdStatusChart" width="160" height="160" style="display:block;"></canvas>
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--c-tm);">Tasks</span>
+                    </div>
+                </div>
+                <div style="flex:1;min-width:180px;">
+                    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0 0 8px;">Task Status Breakdown</p>
+                    <div id="cdLegend"></div>
+                </div>
+            </div>
+
+            <!-- Project Status doughnut -->
+            <div style="padding:20px 24px;border-top:1px solid #f2f2f2;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+                <div style="position:relative;flex-shrink:0;">
+                    <canvas id="cdProjStatusChart" width="160" height="160" style="display:block;"></canvas>
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--c-tm);">Projects</span>
+                    </div>
+                </div>
+                <div style="flex:1;min-width:180px;">
+                    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0 0 8px;">Project Status Breakdown</p>
+                    <div id="cdProjLegend"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+    var PERIODS = {
+        daily:   { labels:{{ daily_labels|safe }},   tasks:{{ daily_tasks|safe }},   projects:{{ daily_projects|safe }},   rev:{{ daily_rev|safe }}   },
+        weekly:  { labels:{{ weekly_labels|safe }},  tasks:{{ weekly_tasks|safe }},  projects:{{ weekly_projects|safe }},  rev:{{ weekly_rev|safe }}  },
+        monthly: { labels:{{ monthly_labels|safe }}, tasks:{{ monthly_tasks|safe }}, projects:{{ monthly_projects|safe }}, rev:{{ monthly_rev|safe }} }
+    };
+    var YEARLY      = {{ yearly_data|safe }};
+    var AVAIL_YEARS = {{ available_years|safe }};
+    var CUR_YEAR    = {{ current_year }};
+    var SL = {{ status_labels|safe }};
+    var SD = {{ status_data|safe }};
+    var PSL = {{ proj_status_labels|safe }};
+    var PSD = {{ proj_status_data|safe }};
+    var C  = ['#FF9800','#2196F3','#9C27B0','#4CAF50','#F44336'];
+
+    var activePeriod = 'weekly';
+    var activeYear   = CUR_YEAR;
+    var activeMonth  = 'all';
+    var barChart = null, lineChart = null;
+
+    function activateBtn(p) {
+        document.querySelectorAll('.cdBtn').forEach(function(b){
+            var on = b.dataset.period === p;
+            b.style.background  = on ? '#2196F3' : 'transparent';
+            b.style.color       = on ? '#fff'    : '#555';
+            b.style.boxShadow   = on ? '0 2px 8px rgba(33,150,243,.4)' : 'none';
+        });
+    }
+
+    function drawCharts(labels, tasks, projects, rev) {
+        var elBar = document.getElementById('cdTaskChart');
+        if (elBar) {
+            if (barChart) { barChart.destroy(); barChart = null; }
+            barChart = new Chart(elBar, {
+                type: 'bar',
+                data: { labels: labels, datasets: [
+                    { label:'Tasks',    data:tasks,    backgroundColor:'#2196F3', hoverBackgroundColor:'#1565C0', borderRadius:5, borderSkipped:false },
+                    { label:'Projects', data:projects, backgroundColor:'#FF9800', hoverBackgroundColor:'#e65100', borderRadius:5, borderSkipped:false }
+                ]},
+                options: { responsive:true, maintainAspectRatio:false, animation:{duration:350},
+                    plugins:{ legend:{display:true,position:'top',labels:{boxWidth:12,font:{size:11},padding:14}},
+                        tooltip:{callbacks:{label:function(c){ return ' '+c.dataset.label+': '+c.parsed.y; }}}
+                    },
+                    scales:{
+                        y:{beginAtZero:true,ticks:{stepSize:1,precision:0,maxTicksLimit:6},grid:{color:'#f0f0f0'}},
+                        x:{grid:{display:false},ticks:{maxRotation:35,font:{size:11}}}
+                    }
+                }
+            });
+        }
+        var elLine = document.getElementById('cdRevChart');
+        if (elLine) {
+            if (lineChart) { lineChart.destroy(); lineChart = null; }
+            lineChart = new Chart(elLine, {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label:'Total Spend ₹', data:rev,
+                    borderColor:'#2196F3', backgroundColor:'rgba(33,150,243,.07)',
+                    fill:true, tension:0.4,
+                    pointBackgroundColor:'#2196F3', pointBorderColor:'#fff',
+                    pointBorderWidth:2, pointRadius:4, pointHoverRadius:7 }]
+                },
+                options: { responsive:true, maintainAspectRatio:false, animation:{duration:350},
+                    plugins:{ legend:{display:false},
+                        tooltip:{callbacks:{label:function(c){ return ' ₹'+Number(c.parsed.y).toLocaleString('en-IN'); }}}
+                    },
+                    scales:{
+                        y:{beginAtZero:true,grid:{color:'#f0f0f0'},
+                            ticks:{maxTicksLimit:6,callback:function(v){ return '₹'+(v>=1000?(v/1000).toFixed(0)+'k':v); }}},
+                        x:{grid:{display:false},ticks:{maxRotation:35,font:{size:11}}}
+                    }
+                }
+            });
+        }
+    }
+
+    function drawPeriod(p) {
+        drawCharts(PERIODS[p].labels, PERIODS[p].tasks, PERIODS[p].projects, PERIODS[p].rev);
+    }
+
+    function drawByYearMonth() {
+        var yData = YEARLY[String(activeYear)];
+        if (!yData) return;
+        var yp = yData.projects || yData.labels.map(function(){ return 0; });
+        if (activeMonth === 'all') {
+            drawCharts(yData.labels, yData.tasks, yp, yData.rev);
+        } else {
+            var mi = parseInt(activeMonth);
+            drawCharts([yData.labels[mi]], [yData.tasks[mi]], [yp[mi]], [yData.rev[mi]]);
+        }
+    }
+
+
+    // ── Project Status Doughnut ─────────────────────────────────────────
+    function drawProjDoughnut() {
+        var el = document.getElementById('cdProjStatusChart');
+        if (!el) return;
+        var total = PSD.reduce(function(a,b){return a+b;},0);
+        new Chart(el, {
+            type: 'doughnut',
+            data: { labels: PSL, datasets: [{ data: PSD,
+                backgroundColor: ['#4CAF50','#2196F3','#FF9800','#27ae60','#9E9E9E'],
+                borderWidth: 3, borderColor: '#fff', hoverOffset: 6 }] },
+            options: { responsive: false, cutout: '70%',
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: function(c) {
+                        return ' '+c.label+': '+c.raw+' ('+(total>0?Math.round(c.raw/total*100):0)+'%)';
+                    } } }
+                }
+            }
+        });
+        var leg = document.getElementById('cdProjLegend');
+        if (!leg) return;
+        leg.innerHTML = '';
+        var PC = ['#4CAF50','#2196F3','#FF9800','#27ae60','#9E9E9E'];
+        PSL.forEach(function(l,i) {
+            var v = PSD[i], pct = total>0 ? Math.round(v/total*100) : 0;
+            leg.innerHTML += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f8f8f8;">'
+              + '<span style="width:12px;height:12px;border-radius:50%;background:'+PC[i]+';flex-shrink:0;"></span>'
+              + '<span style="flex:1;font-size:13px;color:var(--c-t3);">'+l+'</span>'
+              + '<span style="font-size:13px;font-weight:700;min-width:24px;text-align:right;">'+v+'</span>'
+              + '<span style="font-size:12px;color:var(--c-tm);min-width:38px;text-align:right;">'+pct+'%</span>'
+              + '</div>';
+        });
+    }
+
+    function drawDoughnut() {
+        var el = document.getElementById('cdStatusChart');
+        if (!el) return;
+        var total = SD.reduce(function(a,b){return a+b;},0);
+        new Chart(el, {
+            type:'doughnut',
+            data:{ labels:SL, datasets:[{ data:SD, backgroundColor:C, borderWidth:3, borderColor:'#fff', hoverOffset:6 }] },
+            options:{ responsive:false, cutout:'70%',
+                plugins:{ legend:{display:false},
+                    tooltip:{callbacks:{label:function(c){ return ' '+c.label+': '+c.raw+' ('+(total>0?Math.round(c.raw/total*100):0)+'%)'; }}}
+                }
+            }
+        });
+        var leg = document.getElementById('cdLegend');
+        if (!leg) return;
+        leg.innerHTML = '';
+        SL.forEach(function(l,i){
+            var v=SD[i], pct=total>0?Math.round(v/total*100):0;
+            leg.innerHTML += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f8f8f8;">'
+              +'<span style="width:12px;height:12px;border-radius:50%;background:'+C[i]+';flex-shrink:0;"></span>'
+              +'<span style="flex:1;font-size:13px;color:var(--c-t3);">'+l+'</span>'
+              +'<span style="font-size:13px;font-weight:700;min-width:24px;text-align:right;">'+v+'</span>'
+              +'<span style="font-size:12px;color:var(--c-tm);min-width:38px;text-align:right;">'+pct+'%</span>'
+              +'</div>';
+        });
+    }
+
+    window.cdOnYearChange = function(yr) {
+        activeYear  = parseInt(yr);
+        activeMonth = 'all';
+        var ms = document.getElementById('cdMonthSelect');
+        if (ms) ms.value = 'all';
+        if (activePeriod === 'monthly') drawByYearMonth();
+    };
+    window.cdOnMonthChange = function(mo) {
+        activeMonth = mo;
+        if (activePeriod === 'monthly') drawByYearMonth();
+    };
+
+    document.addEventListener('DOMContentLoaded', function(){
+        var selYear = document.getElementById('cdYearSelect');
+        if (selYear) {
+            AVAIL_YEARS.slice().reverse().forEach(function(y){
+                var o = document.createElement('option');
+                o.value = y; o.textContent = y;
+                if (y === CUR_YEAR) o.selected = true;
+                selYear.appendChild(o);
+            });
+        }
+        document.querySelectorAll('.cdBtn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                activePeriod = btn.dataset.period;
+                var ms = document.getElementById('cdMonthSelect');
+                if (ms) ms.style.display = (activePeriod==='monthly') ? '' : 'none';
+                activateBtn(activePeriod);
+                if (activePeriod === 'monthly') drawByYearMonth();
+                else drawPeriod(activePeriod);
+            });
+        });
+        drawDoughnut();
+        drawProjDoughnut();
+        activateBtn('weekly');
+        drawPeriod('weekly');
+    });
+})();
+</script>
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

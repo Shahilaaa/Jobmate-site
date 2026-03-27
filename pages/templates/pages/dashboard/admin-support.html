@@ -1,0 +1,321 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Tickets - JobMate Admin</title>
+    <link rel="stylesheet" href="{% static 'css/page-admin-support.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header"><div class="logo"><span>JOB</span>MATE</div></div>
+    <div class="user-profile">
+        <div class="user-info">
+            <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">
+                {% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">{% else %}{{ current_user_initials }}{% endif %}
+            </div>
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <span class="settings-icon">⚙️</span>
+    </div>
+    <ul class="nav-menu">
+        <li><a href="{% url 'dashboard_admin_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'dashboard_admin_employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+        <li><a href="{% url 'dashboard_admin_clients' %}"><span class="nav-icon">👤</span> Clients</a></li>
+        <li><a href="{% url 'dashboard_admin_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+        <li><a href="{% url 'dashboard_admin_departments' %}"><span class="nav-icon">🏷️</span> Departments</a></li>
+        <li><a href="{% url 'dashboard_admin_support' %}"<span class="nav-icon">🎫</span> Support Tickets</a></li>
+        <li><a href="{% url 'admin_bank_accounts' %}"><span class="nav-icon">🏦</span> Bank Accounts</a></li>
+            <li><a href="{% url 'dashboard_admin_settings' %}"><span class="nav-icon">⚙️</span> Settings</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+    <div class="content-header">
+        <h1 class="page-title">Support Tickets</h1>
+        <div class="header-actions">
+            <a href="?status=open" class="action-btn" style="text-decoration:none;">🟡 Open</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="spt-stats-row">
+        <div class="spt-stat-card all">
+            <span class="spt-stat-n">{{ counts.all }}</span>
+            <span class="spt-stat-l">Total Tickets</span>
+        </div>
+        <div class="spt-stat-card open">
+            <span class="spt-stat-n">{{ counts.open }}</span>
+            <span class="spt-stat-l">Open</span>
+        </div>
+        <div class="spt-stat-card prog">
+            <span class="spt-stat-n">{{ counts.in_progress }}</span>
+            <span class="spt-stat-l">In Progress</span>
+        </div>
+        <div class="spt-stat-card closed">
+            <span class="spt-stat-n">{{ counts.closed }}</span>
+            <span class="spt-stat-l">Closed</span>
+        </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="spt-filter-bar">
+        <a href="?status=all"         class="spt-filter-btn {% if status_filter == 'all' %}active{% endif %}">All ({{ counts.all }})</a>
+        <a href="?status=open"        class="spt-filter-btn {% if status_filter == 'open' %}active{% endif %}">Open ({{ counts.open }})</a>
+        <a href="?status=in_progress" class="spt-filter-btn {% if status_filter == 'in_progress' %}active{% endif %}">In Progress ({{ counts.in_progress }})</a>
+        <a href="?status=closed"      class="spt-filter-btn {% if status_filter == 'closed' %}active{% endif %}">Closed ({{ counts.closed }})</a>
+    </div>
+
+    <!-- Tickets table -->
+    <div class="spt-table-wrap">
+        {% if tickets %}
+        <table class="spt-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Subject &amp; Message</th>
+                    <th>Client</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tickets-tbody">
+            {% for t in tickets %}
+            <tr id="row-{{ t.id }}">
+                <td class="spt-id">#{{ t.id }}</td>
+                <td>
+                    <div class="spt-subject">{{ t.subject }}</div>
+                    <div class="spt-msg">{{ t.message|truncatechars:100 }}</div>
+                </td>
+                <td>
+                    <div class="spt-client">{{ t.created_by.get_full_name|default:t.created_by.username }}</div>
+                    <div class="spt-email">{{ t.created_by.email|default:"—" }}</div>
+                </td>
+                <td class="spt-date">
+                    {{ t.created_at.day }} {{ t.created_at|date:"M" }} {{ t.created_at.year }}<br>
+                    <span style="font-size:11px;color:var(--c-tm);">{{ t.created_at|time:"H:i" }}</span>
+                </td>
+                <td>
+                    <span class="badge {% if t.status == 'open' %}badge-open{% elif t.status == 'in_progress' %}badge-prog{% else %}badge-closed{% endif %}" id="badge-{{ t.id }}">
+                        {{ t.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    <div class="spt-actions">
+                        <button class="btn-reply"
+                            onclick="openReply({{ t.id }}, '{{ t.subject|escapejs }}', '{{ t.message|truncatechars:200|escapejs }}', '{{ t.created_by.get_full_name|default:t.created_by.username|escapejs }}', '{{ t.status }}')">
+                            ✉ Reply
+                        </button>
+                        <button class="btn-status"
+                            onclick="cycleStatus({{ t.id }}, '{{ t.status }}')">
+                            ⟳ Status
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="spt-empty">
+            <div class="spt-empty-ico">🎫</div>
+            <p style="font-size:16px;font-weight:600;color:var(--c-t3);">No tickets found</p>
+            <p style="font-size:14px;">{% if status_filter != 'all' %}No {{ status_filter|title }} tickets.{% else %}No support tickets submitted yet.{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+</main>
+</div>
+
+<!-- Reply Modal -->
+<div class="modal-overlay" id="replyModal">
+    <div class="modal-box">
+        <!-- Modal header -->
+        <div class="modal-header">
+            <div class="modal-title">✉ Reply to Ticket <span id="modal-ticket-id"></span></div>
+            <button class="modal-close-btn" onclick="closeModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Client info -->
+            <div class="modal-client">
+                <div class="modal-client-avatar" id="modal-client-initial">C</div>
+                <div>
+                    <div class="modal-client-label">Client</div>
+                    <div class="modal-client-name" id="modal-client-name">—</div>
+                </div>
+            </div>
+
+            <!-- Original message -->
+            <div class="modal-orig">
+                <div class="modal-orig-label">Original Message</div>
+                <div class="modal-orig-text" id="modal-orig-msg"></div>
+            </div>
+
+            <!-- Status -->
+            <div class="modal-field">
+                <label>Update Status</label>
+                <select id="modal-status">
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+
+            <!-- Reply -->
+            <div class="modal-field">
+                <label>Reply Message <span style="color:#e53e3e;">*</span></label>
+                <textarea id="modal-reply" rows="5" placeholder="Write your reply to the client… (will be sent via email)"></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-send" id="modal-send-btn" onclick="sendReply()">✉ Send Reply</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var CSRF = '{{ csrf_token }}';
+var UPDATE_URL_TPL = '{% url "dashboard_admin_support_update" pk=12345678 %}';
+
+var currentTicketId = null;
+
+function openReply(id, subject, msg, clientName, status) {
+    currentTicketId = id;
+    document.getElementById('modal-ticket-id').textContent = '#' + id + ' — ' + subject;
+    document.getElementById('modal-client-name').textContent = clientName;
+    document.getElementById('modal-client-initial').textContent = clientName.charAt(0).toUpperCase() || 'C';
+    document.getElementById('modal-orig-msg').textContent = msg;
+    document.getElementById('modal-status').value = status;
+    document.getElementById('modal-reply').value = '';
+    document.getElementById('replyModal').classList.add('open');
+    setTimeout(function(){ document.getElementById('modal-reply').focus(); }, 100);
+}
+
+function closeModal() {
+    document.getElementById('replyModal').classList.remove('open');
+    currentTicketId = null;
+}
+
+function sendReply() {
+    var reply  = document.getElementById('modal-reply').value.trim();
+    var status = document.getElementById('modal-status').value;
+    if (!reply) { showToast('⚠ Please write a reply message.'); return; }
+
+    var btn = document.getElementById('modal-send-btn');
+    btn.disabled = true; btn.textContent = '⏳ Sending…';
+
+    var fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('reply', reply);
+    fd.append('status', status);
+
+    fetch(UPDATE_URL_TPL.replace('12345678', currentTicketId), { method:'POST', body:fd, credentials:'same-origin' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+        btn.disabled = false; btn.textContent = '✉ Send Reply';
+        if (d.ok) {
+            updateRowStatus(currentTicketId, d.status);
+            closeModal();
+            var msg = d.email_sent ? '✅ Reply sent to client via email!' : '✅ Status updated.' + (d.note ? ' Note: ' + d.note : '');
+            showToast(msg);
+        } else {
+            showToast('❌ ' + (d.error || 'Something went wrong.'));
+        }
+    })
+    .catch(function(){
+        btn.disabled = false; btn.textContent = '✉ Send Reply';
+        showToast('❌ Network error. Please try again.');
+    });
+}
+
+function cycleStatus(id, current) {
+    var next = { open:'in_progress', in_progress:'closed', closed:'open' };
+    var newStatus = next[current] || 'open';
+    var fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('status', newStatus);
+
+    fetch(UPDATE_URL_TPL.replace('12345678', id), { method:'POST', body:fd, credentials:'same-origin' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+        if (d.ok) {
+            updateRowStatus(id, d.status);
+            showToast('✅ Status updated to: ' + d.status.replace('_',' '));
+            // Update the onclick to reflect new status
+            var btn = document.querySelector('#row-'+id+' .btn-status');
+            if(btn) btn.setAttribute('onclick', "cycleStatus("+id+", '"+d.status+"')");
+            var replyBtn = document.querySelector('#row-'+id+' .btn-reply');
+            if(replyBtn) {
+                var orig = replyBtn.getAttribute('onclick');
+                replyBtn.setAttribute('onclick', orig.replace(/'open'|'in_progress'|'closed'/, "'"+d.status+"'"));
+            }
+        }
+    })
+    .catch(function(){ showToast('❌ Network error.'); });
+}
+
+function updateRowStatus(id, status) {
+    var badge = document.getElementById('badge-' + id);
+    if (!badge) return;
+    badge.className = 'badge';
+    var labels = { open:'Open', in_progress:'In Progress', closed:'Closed' };
+    var cls    = { open:'badge-open', in_progress:'badge-prog', closed:'badge-closed' };
+    badge.classList.add(cls[status] || 'badge-open');
+    badge.textContent = labels[status] || status;
+}
+
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+
+// Close modal on overlay click
+document.getElementById('replyModal').addEventListener('click', function(e){
+    if(e.target === this) closeModal();
+});
+</script>
+
+    <!-- ══ WhatsApp-style Scroll Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed; bottom: 28px; right: 88px; z-index: 9998;
+        width: 44px; height: 44px; border-radius: 50%; background: #90CAF9;
+        border: none; cursor: pointer; display: flex; align-items: center;
+        justify-content: center; box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 1; visibility: visible; outline: none;
+        transition: background 0.2s, transform 0.2s;
+    }
+    #scrollTopBtn:hover { background: #2196F3; transform: translateY(-2px) scale(1.07); }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg { width:20px; height:20px; fill:none; stroke:#fff; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; display:block; }
+    #scrollTopBtn::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(144,202,249,0.45); animation:stPulse 2.5s ease-in-out infinite; pointer-events:none; }
+    @keyframes stPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.35);opacity:0;}}
+    </style>
+    <button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom"
+        onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <!-- ══ End Scroll Button ══ -->
+
+</body>
+</html>

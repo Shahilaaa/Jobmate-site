@@ -1,0 +1,9 @@
+Django>=5.2,<6.0
+python-dotenv>=1.0
+psycopg[binary]>=3.2
+# If psycopg v3 fails to install (e.g. macOS Python 3.9), use:
+# pip install psycopg2-binary
+psycopg2-binary>=2.9
+Pillow>=10.0
+anthropic>=0.25.0
+razorpay

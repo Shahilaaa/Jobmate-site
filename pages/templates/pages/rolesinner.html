@@ -1,0 +1,120 @@
+{% extends 'pages/base.html' %}
+{% load static %}
+
+{% block title %}JobMate - Roles &amp; Skills Inner
+{% load static %}
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+    <section class="hero hero-short hero-centered">
+        <div class="hero-content">
+            <h1>{% if department %}{{ department.name|upper }}{% else %}EXPLORE VERIFIED PROFESSIONALS{% endif %}</h1>
+        </div>
+    </section>
+
+    <!-- Employees Section -->
+    <section class="employees-section">
+        <div class="container">
+            {% if not department and employee_id_requested %}
+            <div style="background:var(--c-white)8e1;border:1px solid #ffe082;border-radius:8px;padding:14px 20px;margin-bottom:32px;font-size:14px;color:#795548;display:flex;align-items:center;gap:10px;">
+                ⚠️ That department is no longer available. Showing all professionals instead.
+                <a href="{% url 'roles' %}" style="margin-left:auto;color:var(--c-b5);font-weight:600;text-decoration:none;white-space:nowrap;">Browse by department →</a>
+            </div>
+            {% endif %}
+            <h2 class="section-title">
+                {% if department %}PROFESSIONALS IN {{ department.name|upper }}{% else %}FIND THE RIGHT PROFESSIONAL FOR YOUR PROJECT{% endif %}
+            </h2>
+            {% if department and department.description %}
+            <p style="text-align:center;max-width:700px;margin:-40px auto 50px;font-size:15px;line-height:1.8;color:var(--c-tm);">
+                {{ department.description }}
+            </p>
+            {% endif %}
+            
+            {% if not request.user.is_authenticated and employees %}
+            <div style="background:#f0f7ff;border:1px solid #2196F3;border-radius:6px;padding:18px 24px;margin-bottom:40px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+                <div>
+                    <strong style="color:var(--c-t1);font-size:14px;">🔒 Login required to view professional profiles</strong>
+                    <p style="font-size:13px;color:var(--c-t3);margin-top:4px;">Create a free account or log in to connect with verified professionals.</p>
+                </div>
+                <a href="/login/?next={{ request.path }}" style="background:var(--c-b5);color:#fff;padding:10px 24px;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1px;white-space:nowrap;">LOGIN / REGISTER</a>
+            </div>
+            {% endif %}
+            <!-- NLP Search -->
+            <form method="get" action="" data-nlp-search="employees" style="display:flex;max-width:480px;margin:0 auto 32px;position:relative;">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
+              <input type="text" name="q" value="{{ q|default:'' }}"
+                placeholder="Search by name, skill, department..."
+                style="flex:1;padding:12px 16px 12px 42px;border:1.5px solid var(--c-bdr);border-radius:30px;font-size:14px;outline:none;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                        <button type="submit" class="nlp-submit-btn" title="Search">🔍</button>
+            </form>
+            {% if q %}<p style="text-align:center;font-size:13px;color:var(--c-tm);margin:-20px 0 20px;">Showing NLP results for "<strong>{{ q }}</strong>" — <a href="?" style="color:#1a73e8;">clear</a></p>{% endif %}
+
+            
+      {% if q %}
+      <div class="nlp-result-banner">
+        <span>🤖 AI Search: <strong>{{ q }}</strong></span>
+        <a href="?" class="nlp-clear-btn">✕ Clear</a>
+      </div>
+      {% endif %}
+      
+      <div class="employee-list">
+                {% for e in employees %}
+                <div class="employee-item" style="position:relative;">
+                    <div class="employee-image">
+                        {% if request.user.is_authenticated %}
+                            {% if e.profile_image %}
+                                <img src="{{ e.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;" alt="{{ e.profile.user.get_full_name }}">
+                            {% else %}
+                                <span style="font-size:28px;font-weight:800;color:#fff;">{{ e.profile.user.first_name|first|upper|default:"E" }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="font-size:28px;font-weight:800;color:#fff;filter:blur(6px);user-select:none;">🔒</span>
+                        {% endif %}
+                    </div>
+                    <div class="employee-content">
+                        {% if request.user.is_authenticated %}
+                            <h3>{{ e.title|upper|default:e.profile.user.get_full_name|upper }}</h3>
+                            <p>{{ e.bio|truncatechars:180|default:"Skilled professional available for your projects." }}</p>
+                            <div class="skills-tags">
+                                {% if e.skill %}<span class="skill-tag">{{ e.skill.name }}</span>{% endif %}
+                                {% if e.department %}<span class="skill-tag">{{ e.department.name }}</span>{% endif %}
+                                {% if e.is_available %}<span class="skill-tag" style="background:var(--c-b0);color:var(--c-green);">Available</span>{% endif %}
+                            </div>
+                            <a href="{% url 'empprofile_id' e.id %}" class="btn-know-more">KNOW MORE</a>
+                        {% else %}
+                            <h3 style="filter:blur(5px);user-select:none;">██████ ████████</h3>
+                            <p style="filter:blur(4px);user-select:none;">████████████ ████ ████████ ████████ ██████████ ████████ ████.</p>
+                            <div class="skills-tags">
+                                <span class="skill-tag" style="filter:blur(4px);user-select:none;">████████</span>
+                                <span class="skill-tag" style="filter:blur(4px);user-select:none;">████████</span>
+                            </div>
+                            <a href="/login/?next={% url 'empprofile_id' e.id %}" class="btn-know-more">LOGIN TO VIEW</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="employee-item">
+                    <div class="employee-content">
+                        <h3>NO PROFESSIONALS FOUND</h3>
+                        <p>Check back soon for available professionals.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="load-more">
+                {% if department %}
+                <a href="{% url 'employee' %}?dept={{ department.id }}" class="btn-load-more" style="text-decoration:none;display:inline-block;">BROWSE ALL {{ department.name|upper }} PROFESSIONALS</a>
+                {% else %}
+                <a href="{% url 'employee' %}" class="btn-load-more" style="text-decoration:none;display:inline-block;">BROWSE ALL PROFESSIONALS</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Floating Chat Icon -->
+{% block extra_js %}
+<script src="{% static 'js/nlp-search.js' %}"></script>
+{% endblock %}
+{% endblock %}

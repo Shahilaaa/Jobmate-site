@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients - Employee - JobMate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/page-clients.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile">
+            <div class="user-info">
+                <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">
+                    {% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">{% else %}{{ current_user_initials }}{% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span class="settings-icon">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'dashboard_employee_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'dashboard_employee_task' %}"><span class="nav-icon">📋</span> Task</a></li>
+            <li><a href="{% url 'dashboard_clients' %}" class="active"><span class="nav-icon">👥</span> Clients</a></li>
+            <li><a href="{% url 'dashboard_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'dashboard_employee_profile' %}"><span class="nav-icon">👤</span> Profile</a>
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="content-header">
+            <h1 class="page-title">Clients</h1>
+            <div class="header-actions">
+                <form method="get" action="" data-nlp-search="admin_clients" class="page-search-form">
+                    <span class="page-search-icon">🔍</span>
+                    <input type="text" class="page-search-input" placeholder="Search clients..." name="q" value="{{ q|default:'' }}">
+                    <button type="submit" class="page-search-btn">AI</button>
+                </form>
+                {% include 'pages/includes/notif_icon.html' %}
+            </div>
+        </div>
+
+        {% if q %}<div class="nlp-result-banner"><span>🤖 AI Search: <strong>{{ q }}</strong></span><a href="?" class="nlp-clear-btn">✕ Clear</a></div>{% endif %}
+
+        <!-- ── Summary Cards (Revenue-style) ── -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;">
+            <div style="background:#fff;border-radius:18px;border:1px solid var(--c-bdr);padding:18px 20px;box-shadow:0 2px 12px rgba(13,27,42,.08);position:relative;overflow:hidden;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#1565C0,#2196F3,#90CAF9);"></div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">👥 Total Clients</div>
+                <div style="font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:28px;font-weight:900;color:#0D1B2A;letter-spacing:-1px;line-height:1;">{{ clients|length }}</div>
+                <div style="font-size:11px;color:var(--c-tm);margin-top:4px;">Assigned to you</div>
+            </div>
+            <div style="background:#fff;border-radius:18px;border:1px solid var(--c-bdr);padding:18px 20px;box-shadow:0 2px 12px rgba(13,27,42,.08);position:relative;overflow:hidden;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#16A34A,#4ade80);"></div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">📋 Total Tasks</div>
+                <div style="font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:28px;font-weight:900;color:#0D1B2A;letter-spacing:-1px;line-height:1;">{{ total_task_count|default:"0" }}</div>
+                <div style="font-size:11px;color:var(--c-tm);margin-top:4px;">Across all clients</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#1565C0,#0d47a1);border-radius:18px;padding:18px 20px;box-shadow:0 4px 18px rgba(33,150,243,.38);position:relative;overflow:hidden;">
+                <div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">🤝 Active Alliances</div>
+                <div style="font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:28px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1;">{{ clients|length }}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">Working relationships</div>
+            </div>
+        </div>
+
+        <!-- ── Clients Table (Revenue-style format) ── -->
+        <div style="font-size:11px;font-weight:700;color:var(--c-t3);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--c-b1);border-radius:6px;font-size:13px;">👥</span>
+            Client Alliances
+        </div>
+        <div style="background:#fff;border-radius:18px;border:1px solid var(--c-bdr);overflow:hidden;box-shadow:0 2px 12px rgba(13,27,42,.07);">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="padding:13px 18px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--c-t3);background:var(--c-b0);border-bottom:2px solid var(--c-bdr);font-family:'Inter', 'Segoe UI', sans-serif !important;">Client</th>
+                        <th style="padding:13px 18px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--c-t3);background:var(--c-b0);border-bottom:2px solid var(--c-bdr);font-family:'Inter', 'Segoe UI', sans-serif !important;">Company / Email</th>
+                        <th style="padding:13px 18px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--c-t3);background:var(--c-b0);border-bottom:2px solid var(--c-bdr);font-family:'Inter', 'Segoe UI', sans-serif !important;">Tasks</th>
+                        <th style="padding:13px 18px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--c-t3);background:var(--c-b0);border-bottom:2px solid var(--c-bdr);font-family:'Inter', 'Segoe UI', sans-serif !important;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clients %}
+                    <tr style="transition:background .2s;" onmouseover="this.style.background='#F0F7FF'" onmouseout="this.style.background=''">
+                        <td style="padding:14px 18px;border-bottom:1px solid var(--c-surf2);">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(33,150,243,.3);">
+                                    {{ c.profile.user.first_name|first|upper|default:"C" }}
+                                </div>
+                                <div>
+                                    <div style="font-size:14px;font-weight:600;color:var(--c-t1);">{{ c.profile.user.get_full_name|default:c.profile.user.username }}</div>
+                                    <div style="font-size:11.5px;color:var(--c-tm);margin-top:1px;">{{ c.profile.user.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding:14px 18px;border-bottom:1px solid var(--c-surf2);font-size:13.5px;color:var(--c-t3);">{{ c.company|default:c.profile.user.email }}</td>
+                        <td style="padding:14px 18px;border-bottom:1px solid var(--c-surf2);text-align:center;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;padding:0 10px;background:var(--c-b1);color:var(--c-b8);border:1px solid var(--c-b2);border-radius:99px;font-size:12px;font-weight:700;">{{ c.task_count }}</span>
+                        </td>
+                        <td style="padding:14px 18px;border-bottom:1px solid var(--c-surf2);text-align:center;">
+                            <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:#DCFCE7;color:#16A34A;border:1px solid #BBF7D0;border-radius:99px;font-size:11px;font-weight:700;">
+                                <span style="width:6px;height:6px;background:#16A34A;border-radius:50%;"></span>Active
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="padding:48px;text-align:center;color:var(--c-tm);">
+                            <div style="font-size:32px;margin-bottom:10px;">👥</div>
+                            <div style="font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:15px;font-weight:700;color:var(--c-t2);margin-bottom:4px;">No Clients Yet</div>
+                            <div style="font-size:13px;">Clients assigned to your tasks will appear here</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+</div>
+
+<!-- ══ JobMate AI Chatbot ══ -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">🤖<div id="jmDot">1</div></button>
+<div id="jmBox">
+  <div id="jmHead"><div class="av">🤖</div><div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online — Ask me anything</div></div><button id="jmX" onclick="jmOpen()" title="Close">✕</button></div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips">
+    <button class="jmC" onclick="jmAsk('Who are my clients?')">My clients</button>
+    <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+    <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+  </div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo" title="Send">&#10148;</button></div>
+</div>
+<script>
+(function(){
+  var hist=[],open=false;
+  function hhmmss(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function bubble(txt,mine){var msgs=document.getElementById('jmMsgs');var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}var inner=document.createElement('div');var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;}
+  function typing(show){document.getElementById('jmTyping').style.display=show?'flex':'none';}
+  window.jmOpen=function(){open=!open;document.getElementById('jmBox').classList.toggle('on',open);document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';if(open){if(!document.getElementById('jmMsgs').children.length){bubble('Hi! I am the JobMate AI assistant.',false);}setTimeout(function(){var inp=document.getElementById('jmInp');if(inp)inp.focus();},200);}};
+  window.jmAsk=function(txt){document.getElementById('jmChips').style.display='none';document.getElementById('jmInp').value=txt;jmSend();};
+  function jmSend(){var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='';document.getElementById('jmChips').style.display='none';bubble(msg,true);hist.push({role:'user',content:msg});typing(true);fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(d){typing(false);bubble(d.reply||'Sorry, no response.',false);hist.push({role:'assistant',content:d.reply||''});}).catch(function(){typing(false);bubble('Sorry, could not connect. Please try again.',false);});}
+  document.getElementById('jmGo').addEventListener('click',jmSend);
+  document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});
+  document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});
+  setTimeout(function(){if(!open){var dot=document.getElementById('jmDot');if(dot)dot.style.display='flex';}},4000);
+})();
+</script>
+{% include 'pages/includes/notif_live.html' %}
+<script src="{% static 'js/nlp-search.js' %}"></script>
+</body>
+</html>

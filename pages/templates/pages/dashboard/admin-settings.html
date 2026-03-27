@@ -1,0 +1,336 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — JobMate Admin</title>
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <style>
+        body{font-family:'Inter','Segoe UI',sans-serif;background:#EEF4FF;color:#0D1B2A;}
+        .dashboard-layout{display:flex;min-height:100vh;}
+        .sidebar{width:240px;background:linear-gradient(165deg,#0a1520 0%,#0D1B2A 45%,#0f2235 100%);border-right:1px solid rgba(144,202,249,.1);box-shadow:4px 0 28px rgba(13,27,42,.24);display:flex;flex-direction:column;padding:28px 0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0;}
+        .sidebar-header{padding:0 24px 24px;}
+        .logo{font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px;}
+        .logo span{color:#42A5F5;}
+        .user-profile{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0 12px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(144,202,249,.14);border-radius:14px;}
+        .user-info{display:flex;align-items:center;gap:10px;}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;}
+        .user-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.92);}
+        .settings-icon{color:rgba(255,255,255,.4);font-size:14px;}
+        .nav-menu{list-style:none;padding:0 12px;flex:1;}
+        .nav-menu li{margin-bottom:3px;}
+        .nav-menu a{display:flex;align-items:center;gap:12px;padding:11px 14px;color:rgba(255,255,255,.62);text-decoration:none;font-size:14px;border-radius:12px;font-weight:500;transition:all .25s;}
+        .nav-menu a.active{background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(33,150,243,.38);}
+        .nav-menu a:hover:not(.active){background:rgba(255,255,255,.08);color:rgba(255,255,255,.95);transform:translateX(3px);}
+        .nav-icon{font-size:16px;width:20px;flex-shrink:0;}
+        .sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.07);}
+        .sidebar-footer a{display:flex;align-items:center;gap:12px;padding:10px 14px;color:rgba(255,255,255,.55);text-decoration:none;font-size:14px;border-radius:12px;margin-bottom:4px;transition:all .25s;}
+        .sidebar-footer a.logout{color:#FCA5A5;}
+        .sidebar-footer a.logout:hover{background:rgba(220,38,38,.12);}
+        .main-content{flex:1;padding:28px 32px;overflow-x:hidden;min-width:0;}
+        .content-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;margin-bottom:24px;border-bottom:1.5px solid #C5D8F0;}
+        .page-title{font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:#0D1B2A;letter-spacing:-.5px;}
+
+        /* Cards */
+        .s-card{background:#fff;border-radius:16px;border:1px solid #C5D8F0;box-shadow:0 2px 8px rgba(13,27,42,.05);padding:24px 26px;margin-bottom:22px;}
+        .s-card-title{font-size:15px;font-weight:800;color:#0D1B2A;margin-bottom:3px;display:flex;align-items:center;gap:8px;}
+        .s-card-sub{font-size:12px;color:#6A8AAA;margin-bottom:20px;}
+
+        /* Banner */
+        .s-banner{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:18px;}
+        .s-banner.ok{background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0;}
+        .s-banner.warn{background:#FFFBEB;color:#B45309;border:1px solid #FDE68A;}
+        .s-banner.err{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;}
+        .s-banner-icon{font-size:18px;flex-shrink:0;}
+        .s-banner-body{flex:1;}
+        .s-banner-title{font-weight:700;margin-bottom:2px;}
+        .s-banner-desc{font-size:12px;font-weight:400;opacity:.8;}
+
+        /* Status pill */
+        .s-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+        .s-pill.ok{background:#DCFCE7;color:#15803D;}
+        .s-pill.warn{background:#FEF9C3;color:#A16207;}
+        .s-pill.err{background:#FEE2E2;color:#DC2626;}
+
+        /* Form */
+        .s-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+        @media(max-width:640px){.s-grid{grid-template-columns:1fr;}}
+        .s-label{font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;}
+        .s-input{width:100%;padding:11px 14px;border:1.5px solid #D1D5DB;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;box-sizing:border-box;background:#fff;}
+        .s-input:focus{border-color:#2196F3;box-shadow:0 0 0 3px rgba(33,150,243,.1);}
+        .s-input-wrap{position:relative;}
+        .s-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#9CA3AF;padding:0;}
+        .s-hint{font-size:11px;color:#9CA3AF;margin-top:4px;}
+        .s-btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
+        .s-btn{padding:11px 22px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+        .s-btn-primary{background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;box-shadow:0 3px 12px rgba(33,150,243,.3);}
+        .s-btn-primary:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(33,150,243,.4);}
+        .s-btn-outline{background:#fff;color:#374151;border:1.5px solid #D1D5DB;}
+        .s-btn-outline:hover{border-color:#2196F3;color:#2196F3;}
+
+        /* Steps */
+        .s-steps{display:flex;flex-direction:column;gap:10px;}
+        .s-step{display:flex;gap:12px;align-items:flex-start;}
+        .s-step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+        .s-step-text{font-size:13px;color:#374151;line-height:1.6;padding-top:3px;}
+        code{background:#F3F4F6;border-radius:4px;padding:1px 6px;font-size:12px;color:#374151;}
+
+        /* Table */
+        .s-table-wrap{border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;}
+        .s-table{width:100%;border-collapse:collapse;font-size:13px;}
+        .s-table th{padding:11px 14px;background:#F9FAFB;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;text-align:left;border-bottom:1.5px solid #E5E7EB;}
+        .s-table td{padding:13px 14px;border-bottom:1px solid #F3F4F6;vertical-align:middle;}
+        .s-table tr:last-child td{border-bottom:none;}
+        .s-table tr:hover td{background:#F9FAFB;}
+        .s-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;}
+        .s-mono{font-family:monospace;font-size:12px;background:#F3F4F6;padding:2px 8px;border-radius:6px;color:#374151;}
+
+        /* Error cards */
+        .err-card{background:#fff;border-radius:12px;border:1px solid #E5E7EB;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
+        .err-card-bar{width:3px;border-radius:3px;flex-shrink:0;align-self:stretch;}
+        .err-card-title{font-size:13px;font-weight:700;margin-bottom:3px;}
+        .err-card-desc{font-size:12px;color:#6B7280;line-height:1.6;}
+    </style>
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile">
+            <div class="user-info">
+                <div class="user-avatar">
+                    {% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    {% else %}{{ current_user_initials }}{% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span class="settings-icon">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'dashboard_admin_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'dashboard_admin_employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+            <li><a href="{% url 'dashboard_admin_clients' %}"><span class="nav-icon">👤</span> Clients</a></li>
+            <li><a href="{% url 'dashboard_admin_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+            <li><a href="{% url 'dashboard_admin_departments' %}"><span class="nav-icon">🏷️</span> Departments</a></li>
+            <li><a href="{% url 'dashboard_admin_support' %}"><span class="nav-icon">🎫</span> Support Tickets</a></li>
+            <li><a href="{% url 'admin_bank_accounts' %}"><span class="nav-icon">🏦</span> Bank Accounts</a></li>
+            <li><a href="{% url 'dashboard_admin_settings' %}" class="active"><span class="nav-icon">⚙️</span> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1 class="page-title">Settings</h1>
+            <div>{% include 'pages/includes/notif_icon.html' %}</div>
+        </div>
+
+        <!-- ── Status banner ── -->
+        {% if rzp_configured %}
+        <div class="s-banner ok">
+            <div class="s-banner-icon">✅</div>
+            <div class="s-banner-body">
+                <div class="s-banner-title">Razorpay is active</div>
+                <div class="s-banner-desc">Key: {{ rzp_key }} &nbsp;·&nbsp; Secret: {{ rzp_secret_masked }}</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="s-banner warn">
+            <div class="s-banner-icon">⚠️</div>
+            <div class="s-banner-body">
+                <div class="s-banner-title">Razorpay not configured — payments are in test mode</div>
+                <div class="s-banner-desc">Enter your API keys below to enable live Razorpay payments and automatic split transfers.</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if save_msg %}<div class="s-banner {% if save_ok %}ok{% else %}err{% endif %}"><div class="s-banner-icon">{% if save_ok %}💾{% else %}❌{% endif %}</div><div class="s-banner-body"><div class="s-banner-title">{{ save_msg }}</div></div></div>{% endif %}
+        {% if test_msg %}<div class="s-banner {% if test_ok %}ok{% else %}err{% endif %}"><div class="s-banner-icon">{% if test_ok %}🔌{% else %}❌{% endif %}</div><div class="s-banner-body"><div class="s-banner-title">{{ test_msg }}</div></div></div>{% endif %}
+
+        <!-- ── How to get keys ── -->
+        <div class="s-card">
+            <div class="s-card-title">🔑 How to get Razorpay API Keys</div>
+            <div class="s-card-sub">Follow these steps once — then paste your keys below.</div>
+            <div class="s-steps">
+                <div class="s-step"><div class="s-step-num">1</div><div class="s-step-text">Sign up or log in at <a href="https://dashboard.razorpay.com" target="_blank" style="color:#2196F3;font-weight:600;">dashboard.razorpay.com</a></div></div>
+                <div class="s-step"><div class="s-step-num">2</div><div class="s-step-text">Go to <strong>Settings → API Keys → Generate Test Key</strong> (for development) or <strong>Generate Live Key</strong> (for production)</div></div>
+                <div class="s-step"><div class="s-step-num">3</div><div class="s-step-text">Copy the <strong>Key ID</strong> (starts with <code>rzp_test_</code> or <code>rzp_live_</code>) and <strong>Key Secret</strong></div></div>
+                <div class="s-step"><div class="s-step-num">4</div><div class="s-step-text">Paste both below and click <strong>Save Keys</strong>. Then restart the Django server.</div></div>
+                <div class="s-step"><div class="s-step-num">5</div><div class="s-step-text">For <strong>automatic 80/20 split payments</strong>, enable <strong>Route</strong> in Razorpay Dashboard → Products → Route</div></div>
+            </div>
+        </div>
+
+        <!-- ── Keys form ── -->
+        <div class="s-card">
+            <div class="s-card-title">
+                Razorpay Configuration
+                {% if rzp_configured %}<span class="s-pill ok">● Active</span>{% else %}<span class="s-pill err">● Not Configured</span>{% endif %}
+            </div>
+            <div class="s-card-sub">Keys are saved to your <code>.env</code> file with UTF-8 encoding. Restart the server after saving.</div>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_keys">
+                <div class="s-grid">
+                    <div>
+                        <label class="s-label">Key ID *</label>
+                        <input class="s-input" type="text" name="rzp_key_id"
+                            value="{{ rzp_key }}"
+                            placeholder="rzp_test_xxxxxxxxxxxx"
+                            autocomplete="off">
+                        <div class="s-hint">Starts with rzp_test_ (testing) or rzp_live_ (production)</div>
+                    </div>
+                    <div>
+                        <label class="s-label">Key Secret *</label>
+                        <div class="s-input-wrap">
+                            <input class="s-input" type="password" name="rzp_key_secret"
+                                id="rzpSecretInput"
+                                placeholder="Paste your secret key"
+                                autocomplete="new-password">
+                            <button type="button" class="s-eye" onclick="toggleSecret()">👁</button>
+                        </div>
+                        <div class="s-hint">Currently: {% if rzp_secret_masked %}{{ rzp_secret_masked }}{% else %}Not saved{% endif %}</div>
+                    </div>
+                </div>
+                <div class="s-btn-row">
+                    <button type="submit" class="s-btn s-btn-primary">💾 Save Keys</button>
+                </div>
+            </form>
+
+            {% if rzp_configured %}
+            <form method="post" style="margin-top:16px;padding-top:16px;border-top:1px solid #F3F4F6;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="test_keys">
+                <div class="s-btn-row">
+                    <button type="submit" class="s-btn s-btn-outline">🔌 Test Connection</button>
+                    <span style="font-size:12px;color:#9CA3AF;align-self:center;">Sends a test request to Razorpay to verify your keys work</span>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- ── Bank accounts table ── -->
+        <div class="s-card">
+            <div class="s-card-title">
+                🏦 Linked Bank Accounts
+                <span class="s-pill ok">{{ verified_cnt }} verified</span>
+                {% if pending_cnt %}<span class="s-pill warn">{{ pending_cnt }} pending</span>{% endif %}
+            </div>
+            <div class="s-card-sub">Employees and clients who have added bank details. Razorpay Fund Account ID is required for automatic payouts.</div>
+            {% if bank_details %}
+            <div class="s-table-wrap">
+                <table class="s-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Name</th>
+                            <th>Bank</th>
+                            <th>Account</th>
+                            <th>IFSC</th>
+                            <th>Razorpay Contact</th>
+                            <th>Fund Account</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bank_details %}
+                        <tr>
+                            <td><div class="s-avatar">{{ b.account_holder|first|upper|default:"U" }}</div></td>
+                            <td>
+                                <div style="font-weight:700;color:#0D1B2A;">{{ b.account_holder }}</div>
+                                <div style="font-size:11px;color:#6B7280;">{{ b.user.email }}</div>
+                            </td>
+                            <td style="color:#374151;">{{ b.bank_name|default:"—" }}</td>
+                            <td><span class="s-mono">****{{ b.account_number|slice:"-4:" }}</span></td>
+                            <td><span class="s-mono" style="color:#1565c0;">{{ b.ifsc_code|default:"—" }}</span></td>
+                            <td>
+                                {% if b.razorpay_contact_id %}
+                                <span class="s-mono" style="background:#EFF6FF;color:#1D4ED8;">{{ b.razorpay_contact_id }}</span>
+                                {% else %}<span style="color:#9CA3AF;font-size:12px;">—</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if b.razorpay_fund_account_id %}
+                                <span class="s-mono" style="background:#F0FDF4;color:#15803D;">{{ b.razorpay_fund_account_id }}</span>
+                                {% else %}<span style="color:#9CA3AF;font-size:12px;">—</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if b.is_verified %}
+                                    <span class="s-pill ok">✓ Verified</span>
+                                {% elif b.razorpay_contact_id %}
+                                    <span class="s-pill warn">⏳ Partial</span>
+                                {% else %}
+                                    <span class="s-pill err">✕ Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:36px;color:#9CA3AF;">
+                <div style="font-size:36px;margin-bottom:10px;">🏦</div>
+                <div style="font-size:14px;font-weight:600;color:#D1D5DB;">No bank accounts added yet</div>
+                <div style="font-size:12px;margin-top:4px;">Employees add bank details from their Bank Details page</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ── Error guide ── -->
+        <div class="s-card">
+            <div class="s-card-title">🛠️ Common Errors &amp; Fixes</div>
+            <div class="s-card-sub" style="margin-bottom:16px;">Reference guide for troubleshooting Razorpay issues.</div>
+
+            <div class="err-card">
+                <div class="err-card-bar" style="background:#DC2626;"></div>
+                <div><div class="err-card-title" style="color:#DC2626;">❌ "Network error. Please try again."</div>
+                <div class="err-card-desc">Django server cannot reach <code>api.razorpay.com</code>. Test with: <code>curl https://api.razorpay.com/v1/orders -u KEY_ID:KEY_SECRET</code>. Usually a firewall or proxy issue on the server. Check internet access on the machine running Django.</div></div>
+            </div>
+
+            <div class="err-card">
+                <div class="err-card-bar" style="background:#D97706;"></div>
+                <div><div class="err-card-title" style="color:#D97706;">⚠️ UnicodeDecodeError when saving keys</div>
+                <div class="err-card-desc">Fixed in this version — the .env file is now always read and written with <code>encoding="utf-8"</code>. If you still see this, delete the .env file and let the server create a fresh one, then re-enter your keys.</div></div>
+            </div>
+
+            <div class="err-card">
+                <div class="err-card-bar" style="background:#D97706;"></div>
+                <div><div class="err-card-title" style="color:#D97706;">⏳ "Route linking pending" for employee</div>
+                <div class="err-card-desc">Employee saved bank details before Razorpay was configured. Ask them to open Bank Details and click Save again — it retries the Razorpay contact + fund account creation automatically.</div></div>
+            </div>
+
+            <div class="err-card">
+                <div class="err-card-bar" style="background:#7C3AED;"></div>
+                <div><div class="err-card-title" style="color:#7C3AED;">🔑 BadRequestError / SignatureVerificationError</div>
+                <div class="err-card-desc">Wrong key mode — test keys (<code>rzp_test_</code>) won't work with live orders and vice versa. Use Test Connection above to verify. Also check that Key ID and Secret are not swapped.</div></div>
+            </div>
+
+            <div class="err-card">
+                <div class="err-card-bar" style="background:#0891B2;"></div>
+                <div><div class="err-card-title" style="color:#0891B2;">🔗 Transfer failed / Route not working</div>
+                <div class="err-card-desc">Enable Route in Razorpay Dashboard → Products → Route. Also ensure the employee's fund account is verified by Razorpay. Payments still complete normally — only the automatic split to employee is skipped if Route isn't set up.</div></div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+function toggleSecret() {
+    var inp = document.getElementById('rzpSecretInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+</script>
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

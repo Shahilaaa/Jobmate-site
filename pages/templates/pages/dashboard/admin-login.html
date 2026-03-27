@@ -1,0 +1,241 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - Master Login</title>
+  <link rel="stylesheet" href="{% static 'css/page-admin-login.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="logo"><span>JOB</span>MATE</div>
+
+            <p class="login-description">
+                This is a place for a exerpt. Lorem ipsum dolor sit amet consectetur. At fusce ac netus non nam ut amet. Arcu tempor rhoncus varius purus a
+            </p>
+
+            <form class="login-form" method="post" action="{% url 'admin_login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">User name</label>
+                    <input type="email" name="email" id="username" placeholder="name@mycompany.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <span class="lock-icon">🔒</span>
+                        <input type="password" name="password" id="password" placeholder="Password" required>
+                        <button type="button" class="forgot-password">Forgot password</button>
+                    </div>
+                </div>
+
+                {% if form.non_field_errors %}<div style="color:#b00020;font-size:13px;margin-bottom:12px;">{{ form.non_field_errors }}</div>{% endif %}
+                <button type="submit" class="btn-login">LOGIN</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Floating Chat Icon -->
+    <!-- ══ JobMate AI Chatbot ══ -->
+
+    <button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">
+      🤖<div id="jmDot">1</div>
+    </button>
+
+    <div id="jmBox">
+      <div id="jmHead">
+        <div class="av">🤖</div>
+        <div class="info">
+          <div class="t">JobMate AI</div>
+          <div class="s"><span class="dot"></span>Online — Ask me anything</div>
+        </div>
+        <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+      </div>
+      <div id="jmMsgs"></div>
+      <div id="jmTyping">
+        <div class="jmAv">🤖</div>
+        <div class="jmDots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="jmChips">
+        <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+        <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+        <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+        <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+      </div>
+      <div id="jmFoot">
+        <textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea>
+        <button id="jmGo" title="Send">&#10148;</button>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var hist=[], open=false;
+
+      function hhmmss(){
+        var d=new Date();
+        return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      }
+
+      function bubble(txt, mine){
+        var msgs=document.getElementById('jmMsgs');
+        var wrap=document.createElement('div');
+        wrap.className='jmRow'+(mine?' me':'');
+        if(!mine){
+          var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);
+        }
+        var inner=document.createElement('div');
+        var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+        var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();
+        inner.appendChild(b);inner.appendChild(t);
+        wrap.appendChild(inner);
+        msgs.appendChild(wrap);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      function typing(show){
+        document.getElementById('jmTyping').style.display=show?'flex':'none';
+        if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}
+      }
+
+      window.jmOpen=function(){
+        open=!open;
+        document.getElementById('jmBox').classList.toggle('on',open);
+        document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+        if(open){
+          if(!document.getElementById('jmMsgs').children.length){
+            bubble('Hi! I am the JobMate AI assistant. I can help you find skilled employees, request tasks, track work, manage payments, and more. How can I help you today?', false);
+          }
+          setTimeout(function(){
+            var inp=document.getElementById('jmInp');
+            if(inp) inp.focus();
+          },200);
+        }
+      };
+
+      window.jmAsk=function(txt){
+        document.getElementById('jmChips').style.display='none';
+        document.getElementById('jmInp').value=txt;
+        jmSend();
+      };
+
+      function jmSend(){
+        var inp=document.getElementById('jmInp');
+        var msg=inp.value.trim();
+        if(!msg) return;
+        inp.value='';inp.style.height='';
+        document.getElementById('jmChips').style.display='none';
+        bubble(msg, true);
+        hist.push({role:'user',content:msg});
+        typing(true);
+        fetch('/chatbot/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({message:msg,history:hist.slice(-10)})
+        })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(d){
+          typing(false);
+          bubble(d.reply||'Sorry, no response.', false);
+          hist.push({role:'assistant',content:d.reply||''});
+        })
+        .catch(function(err){
+          typing(false);
+          bubble('Sorry, could not connect. Please try again.', false);
+        });
+      }
+
+      document.getElementById('jmGo').addEventListener('click', jmSend);
+
+      document.getElementById('jmInp').addEventListener('keydown', function(e){
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}
+      });
+
+      document.getElementById('jmInp').addEventListener('input', function(){
+        this.style.height='';
+        this.style.height=Math.min(this.scrollHeight,80)+'px';
+      });
+
+      // Show badge after 4s
+      setTimeout(function(){
+        if(!open){
+          var dot=document.getElementById('jmDot');
+          if(dot) dot.style.display='flex';
+        }
+      },4000);
+    })();
+    </script>
+    <!-- ══ WhatsApp-style Scroll Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 96px;
+        right: 28px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content: ''; position: absolute; inset: -4px; border-radius: 50%;
+        border: 2px solid rgba(144,202,249,0.45);
+        animation: stPulse 2.5s ease-in-out infinite; pointer-events: none;
+    }
+    @keyframes stPulse {
+        0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.35);opacity:0;}
+    }
+    </style>
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+    })();
+    </script>
+    <!-- ══ End Scroll Button ══ -->
+
+    <!-- ══ End JobMate AI Chatbot ══ -->
+</body>
+</html>

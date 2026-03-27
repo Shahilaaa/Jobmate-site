@@ -1,0 +1,218 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   JOBMATE · macOS / Safari Compatibility Layer
+   Loaded after redesign.css — fixes Safari/macOS-specific rendering
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. System font stack — uses SF Pro on macOS automatically ── */
+:root {
+  --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+    'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono:   ui-monospace, 'SF Mono', 'Fira Code', 'Cascadia Code',
+    'Consolas', monospace;
+}
+
+body {
+  font-family: var(--font-system) !important;
+  -webkit-font-smoothing:  antialiased !important;   /* Retina-sharp text */
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Headings & logo use Display variant on macOS */
+h1, h2, h3, h4, h5, h6,
+.logo, .page-title, .stat-value, .card-title, .revenue-amount,
+.gw-amount-big, .bd-card-title, .s-card-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+    'Inter', 'Outfit', sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+/* Monospace fields */
+input[type="text"][placeholder*="IFSC"],
+input[type="text"][placeholder*="Account"],
+input[type="text"][placeholder*="rzp"],
+.s-mono, code, pre, kbd {
+  font-family: var(--font-mono) !important;
+}
+
+/* ── 2. Remove Safari's default button / input appearance ── */
+button,
+input,
+select,
+textarea {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  font-family: var(--font-system) !important;
+}
+
+/* Restore checkbox & radio (don't strip these) */
+input[type="checkbox"],
+input[type="radio"] {
+  -webkit-appearance: checkbox !important;
+  appearance: auto !important;
+}
+
+/* Fix Safari date input */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+/* ── 3. Buttons — macOS-native feel ── */
+button, .btn, .s-btn, .bd-btn, .gw-btn,
+a[style*="background:#2196F3"], a[style*="background:linear-gradient"] {
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Remove Safari's focus ring in favour of our custom one */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2196F3 !important;
+  outline-offset: 2px !important;
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* ── 4. macOS Safari scrollbar — thin, native-looking ── */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(144, 202, 249, 0.6) transparent !important;
+}
+::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(144, 202, 249, 0.5) !important;
+  border-radius: 100px !important;
+  border: 1px solid transparent !important;
+  background-clip: padding-box !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(33, 150, 243, 0.7) !important;
+}
+
+/* ── 5. Sidebar scrollbar — hide completely on macOS (it overlays) ── */
+.sidebar::-webkit-scrollbar { width: 0 !important; }
+.sidebar { scrollbar-width: none !important; }
+
+/* ── 6. Backdrop-filter — Safari prefix always needed ── */
+.modal-overlay,
+#addEmpOverlay,
+.jm-overlay,
+header,
+header.light-header,
+.mobile-nav,
+.gw-card {
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter:         blur(20px) !important;
+}
+
+/* ── 7. Safe area insets — notch / Dynamic Island on MacBook Pro ── */
+body {
+  padding-left:   env(safe-area-inset-left, 0px);
+  padding-right:  env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.sidebar {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* ── 8. Link tap highlight — remove on Safari ── */
+a { -webkit-tap-highlight-color: transparent !important; }
+
+/* ── 9. Inputs — consistent look on Safari ── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="search"],
+select, textarea {
+  border-radius: 10px !important;
+  -webkit-border-radius: 10px !important;
+  background-color: #fff !important;
+}
+
+/* Fix Safari's default select arrow on macOS */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236A8AAA' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 32px !important;
+}
+
+/* ── 10. Tables — fix Safari border-collapse rendering ── */
+table { border-collapse: collapse !important; }
+table th, table td { 
+  -webkit-border-horizontal-spacing: 0 !important;
+  -webkit-border-vertical-spacing: 0 !important;
+}
+
+/* ── 11. Images — crisp on Retina ── */
+img {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* ── 12. SVGs — sharp on Retina ── */
+svg {
+  shape-rendering: geometricPrecision;
+}
+
+/* ── 13. Transitions — respect macOS Reduce Motion setting ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── 14. Dark mode — respect macOS system preference ── */
+@media (prefers-color-scheme: dark) {
+  /* We keep our custom theme — just ensure dark mode doesn't fight Safari's
+     automatic dark mode inversion on form elements */
+  input, select, textarea {
+    color-scheme: light !important;
+  }
+}
+
+/* ── 15. Print — clean output from Safari ── */
+@media print {
+  .sidebar, #jmBtn, #jmBox, #scrollTopBtn { display: none !important; }
+  .main-content { padding: 0 !important; }
+  body { background: #fff !important; }
+}
+
+/* ── 16. Payment gateway — macOS Safari full-screen fix ── */
+.gw-wrap {
+  min-height: 100dvh !important;          /* dvh for Safari 15.4+ */
+  padding-bottom: env(safe-area-inset-bottom, 24px) !important;
+}
+
+/* ── 17. Sticky sidebar — macOS Safari needs -webkit-sticky ── */
+.sidebar {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+}
+
+/* ── 18. Flex gap fallback for older Safari (< 14) ── */
+/* Modern Safari supports gap, so this is just a safety net */
+.stat-grid, .ba-stats, .s-grid {
+  gap: 16px !important;
+}

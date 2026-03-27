@@ -1,0 +1,415 @@
+{% load static dict_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - JobMate</title>
+    <link rel="stylesheet" href="{% static 'css/page-employee-projects.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo"><span>JOB</span>MATE</div>
+    </div>
+    <div class="user-profile">
+        <div class="user-info">
+            <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                {% if current_user_avatar_url %}
+                    <img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                {% else %}
+                    {{ current_user_initials }}
+                {% endif %}
+            </div>
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <span class="settings-icon">⚙️</span>
+    </div>
+    <ul class="nav-menu">
+        <li><a href="{% url 'dashboard_employee_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'dashboard_employee_task' %}"><span class="nav-icon">📋</span> Task</a></li>
+        <li><a href="{% url 'employee_projects' %}" class="active"><span class="nav-icon">📁</span> Projects</a></li>
+        <li><a href="{% url 'dashboard_clients' %}"><span class="nav-icon">👥</span> Clients</a></li>
+        <li><a href="{% url 'dashboard_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+            <li><a href="{% url 'bank_detail' %}"><span class="nav-icon">🏦</span> Bank Details</a></li>
+        <li><a href="{% url 'employee_chat_inbox' %}"><span class="nav-icon">💬</span> Chat</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'dashboard_employee_profile' %}"><span class="nav-icon">👤</span> Profile</a>
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main-content">
+
+    <div class="content-header">
+        <h1 class="page-title">📁 Projects</h1>
+        <div class="header-right">
+            {% include 'pages/includes/notif_icon.html' %}
+        </div>
+    </div>
+
+    {% for msg in messages %}
+    <div class="{% if msg.tags == 'success' %}msg-success{% else %}msg-error{% endif %}">
+        {% if msg.tags == 'success' %}✅{% else %}⚠️{% endif %} {{ msg }}
+    </div>
+    {% endfor %}
+
+    <!-- Tabs -->
+    <div class="proj-tabs">
+        <button class="proj-tab active" onclick="switchTab('browse', this)">🔍 Browse Projects</button>
+        <button class="proj-tab" onclick="switchTab('mine', this)">📨 My Applications ({{ my_applications|length }})</button>
+        <button class="proj-tab" onclick="switchTab('assigned', this)">✅ Assigned to Me ({{ my_assigned|length }})</button>
+    </div>
+
+    <!-- ══ BROWSE TAB ══ -->
+    <div id="tab-browse">
+        {% if active_projects %}
+        <div class="proj-grid">
+            {% for proj in active_projects %}
+            <div class="proj-card {% if proj.id in my_applied_ids %}applied{% endif %}">
+
+                <div class="proj-card-top">
+                    <div class="proj-card-title">{{ proj.title }}</div>
+                    {% if proj.id in my_applied_ids %}
+                        <span class="proj-badge badge-applied">Applied</span>
+                    {% else %}
+                        <span class="proj-badge badge-active">Open</span>
+                    {% endif %}
+                </div>
+
+                <div class="proj-client">
+                    <div class="client-dot">{{ proj.client.profile.user.first_name|first|upper }}</div>
+                    <span>{{ proj.client.profile.user.get_full_name|default:proj.client.profile.user.username }}</span>
+                    {% if proj.client.company %}<span style="color:var(--c-tm);">· {{ proj.client.company }}</span>{% endif %}
+                </div>
+
+                <p class="proj-desc">{{ proj.description|truncatechars:140 }}</p>
+
+                <div class="proj-meta">
+                    {% if proj.department %}<span class="proj-meta-pill">🏢 {{ proj.department.name }}</span>{% endif %}
+                    {% if proj.skill %}<span class="proj-meta-pill">🔧 {{ proj.skill.name }}</span>{% endif %}
+                    {% if proj.budget %}<span class="proj-meta-pill">💰 ₹{{ proj.budget }}</span>{% endif %}
+                    {% if proj.deadline %}<span class="proj-meta-pill {{ proj.deadline|deadline_urgency }}">📅 {{ proj.deadline|smart_deadline }}</span>{% endif %}
+                    <span class="proj-meta-pill">👥 {{ proj.applications.count }} applied</span>
+                </div>
+
+                <div class="proj-card-actions">
+                    {% if proj.id in my_applied_ids %}
+                        <span class="status-pill-pending">⏳ Application Pending</span>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="withdraw">
+                            <input type="hidden" name="project_id" value="{{ proj.id }}">
+                            <button type="button" class="btn-withdraw"
+                                onclick="confirmWithdraw(this.form, '{{ proj.title|escapejs }}')">
+                                Withdraw
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn-apply"
+                            onclick="openApplyModal({{ proj.id }}, '{{ proj.title|escapejs }}')">
+                            📩 Apply Now
+                        </button>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-title">No active projects right now</div>
+            <div style="font-size:14px;color:var(--c-tm);">Check back soon — clients post new projects regularly.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ══ MY APPLICATIONS TAB ══ -->
+    <div id="tab-mine" style="display:none;">
+        {% if my_applications %}
+        <div class="proj-grid">
+            {% for app in my_applications %}
+            <div class="proj-card {% if app.status == 'accepted' %}accepted{% endif %}">
+                <div class="proj-card-top">
+                    <div class="proj-card-title">{{ app.project.title }}</div>
+                    <span class="proj-badge badge-{{ app.status }}">{{ app.get_status_display }}</span>
+                </div>
+                <div class="proj-client">
+                    <div class="client-dot">{{ app.project.client.profile.user.first_name|first|upper }}</div>
+                    <span>{{ app.project.client.profile.user.get_full_name|default:app.project.client.profile.user.username }}</span>
+                </div>
+                <div style="font-size:12px;color:var(--c-tm);">Applied {{ app.applied_at|date:"j M Y" }}</div>
+                {% if app.message %}
+                <p class="proj-desc" style="font-style:italic;border-left:3px solid #90CAF9;padding-left:10px;">
+                    "{{ app.message|truncatechars:120 }}"
+                </p>
+                {% endif %}
+                <div class="proj-card-actions">
+                    {% if app.status == 'accepted' %}
+                        <span class="status-pill-accepted">🎉 Accepted! You're assigned.</span>
+                    {% elif app.status == 'rejected' %}
+                        <span class="status-pill-rejected">✕ Not selected this time</span>
+                    {% else %}
+                        <span class="status-pill-pending">⏳ Awaiting client decision</span>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="withdraw">
+                            <input type="hidden" name="project_id" value="{{ app.project.id }}">
+                            <button type="button" class="btn-withdraw"
+                                onclick="confirmWithdraw(this.form, '{{ app.project.title|escapejs }}')">
+                                Withdraw
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📨</div>
+            <div class="empty-state-title">No applications yet</div>
+            <div style="font-size:14px;color:var(--c-tm);">Browse open projects and apply to get started.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ══ ASSIGNED TO ME TAB ══ -->
+    <div id="tab-assigned" style="display:none;">
+        {% if my_assigned %}
+        <div class="proj-grid">
+            {% for proj in my_assigned %}
+            <div class="proj-card {% if proj.status == 'completed' %}{% else %}accepted{% endif %}">
+
+                <!-- Header -->
+                <div class="proj-card-top">
+                    <div class="proj-card-title">{{ proj.title }}</div>
+                    {% if proj.status == 'completed' %}
+                        <span class="proj-badge" style="background:var(--c-b0);color:#1b5e20;">🏆 Completed</span>
+                    {% elif proj.status == 'work_submitted' %}
+                        <span class="proj-badge" style="background:var(--c-white)3e0;color:var(--c-amber);">⏳ Work Submitted</span>
+                    {% else %}
+                        <span class="proj-badge badge-accepted">✅ Assigned</span>
+                    {% endif %}
+                </div>
+
+                <!-- Client -->
+                <div class="proj-client">
+                    <div class="client-dot">{{ proj.client.profile.user.first_name|first|upper }}</div>
+                    <span>{{ proj.client.profile.user.get_full_name|default:proj.client.profile.user.username }}</span>
+                </div>
+
+                <p class="proj-desc">{{ proj.description|truncatechars:120 }}</p>
+
+                <div class="proj-meta">
+                    {% if proj.budget %}<span class="proj-meta-pill">💰 ₹{{ proj.budget }}</span>{% endif %}
+                    {% if proj.deadline %}<span class="proj-meta-pill {{ proj.deadline|deadline_urgency }}">📅 {{ proj.deadline|smart_deadline }}</span>{% endif %}
+                </div>
+
+                <!-- ASSIGNED: show upload form -->
+                {% if proj.status == 'assigned' %}
+                <div style="background:var(--c-b1);border-radius:10px;padding:16px;margin-top:4px;">
+                    <div style="font-size:13px;font-weight:700;color:var(--c-b8);margin-bottom:10px;">
+                        📎 Upload Your Completed Work
+                    </div>
+                    <form method="post" enctype="multipart/form-data" action="{% url 'employee_projects' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="submit_work">
+                        <input type="hidden" name="project_id" value="{{ proj.id }}">
+                        <textarea name="work_note" placeholder="Add a note for the client (optional)..."
+                            style="width:100%;padding:10px 12px;border:1.5px solid #90CAF9;border-radius:8px;
+                                   font-size:13px;font-family:inherit;outline:none;resize:vertical;
+                                   min-height:70px;margin-bottom:10px;"></textarea>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                            <label style="flex:1;min-width:200px;cursor:pointer;
+                                background:var(--c-white);border:2px dashed #90CAF9;border-radius:8px;
+                                padding:10px 14px;font-size:13px;color:var(--c-b8);display:flex;
+                                align-items:center;gap:8px;">
+                                <span>📁</span>
+                                <span id="fileLabel_{{ proj.id }}">Choose file to upload…</span>
+                                <input type="file" name="work_file" required
+                                    onchange="document.getElementById('fileLabel_{{ proj.id }}').textContent=this.files[0]?this.files[0].name:'Choose file…'"
+                                    style="display:none;">
+                            </label>
+                            <button type="submit"
+                                style="background:var(--c-b7);color:#fff;border:none;border-radius:8px;
+                                       padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;
+                                       white-space:nowrap;">
+                                📤 Submit Work
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- WORK_SUBMITTED: waiting for client -->
+                {% elif proj.status == 'work_submitted' %}
+                <div style="background:var(--c-white)8e1;border-radius:10px;padding:14px 16px;margin-top:4px;">
+                    <div style="font-size:13px;font-weight:700;color:#f57f17;margin-bottom:6px;">
+                        ⏳ Work Submitted — Awaiting Client Review
+                    </div>
+                    <div style="font-size:12px;color:var(--c-tm);">
+                        Submitted {{ proj.work_submitted_at|date:"j M Y, H:i" }}
+                    </div>
+                    {% if proj.work_file %}
+                    <a href="{% url 'download_project_file' proj.id %}"
+                        style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+                               background:var(--c-b7);color:#fff;padding:7px 14px;border-radius:6px;
+                               font-size:12px;font-weight:600;text-decoration:none;">
+                        ⬇ Download Your Submission
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- COMPLETED: show earnings -->
+                {% elif proj.status == 'completed' %}
+                <div style="background:var(--c-b0);border-radius:10px;padding:14px 16px;margin-top:4px;">
+                    <div style="font-size:13px;font-weight:700;color:var(--c-green);margin-bottom:4px;">
+                        🏆 Project Completed!
+                    </div>
+                    <div style="font-size:22px;font-weight:800;color:#1b5e20;">
+                        ₹{{ proj.budget|floatformat:0 }}
+                        <span style="font-size:13px;font-weight:500;color:var(--c-t3);">earned</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--c-tm);margin-top:4px;">
+                        Completed {{ proj.completed_at|date:"j M Y" }}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <div class="empty-state-title">No assigned projects yet</div>
+            <div style="font-size:14px;color:var(--c-tm);">Apply to projects — when a client accepts, they appear here.</div>
+        </div>
+        {% endif %}
+    </div>
+
+</main>
+</div>
+
+<!-- ══ Apply Modal ══ -->
+<div class="modal-overlay" id="applyModal">
+    <div class="modal-box">
+        <div class="modal-title" id="applyModalTitle">Apply to Project</div>
+        <div class="modal-subtitle">Send your application to the client.</div>
+        <form method="post" action="{% url 'employee_projects' %}" id="applyForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="apply">
+            <input type="hidden" name="project_id" id="applyProjectId">
+            <div style="margin-bottom:16px;">
+                <label class="form-label">Cover Message (optional)</label>
+                <textarea name="message" class="form-textarea"
+                    placeholder="Tell the client why you're a great fit, your relevant experience, or any questions..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeApplyModal()">Cancel</button>
+                <button type="submit" class="btn-primary">📩 Submit Application</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ══ Chatbot ══ -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">🤖<div id="jmDot">1</div></button>
+<div id="jmBox">
+  <div id="jmHead"><div class="av">🤖</div><div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online</div></div><button id="jmX" onclick="jmOpen()">✕</button></div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips">
+    <button class="jmC" onclick="jmAsk('How do I apply to a project?')">How to apply</button>
+    <button class="jmC" onclick="jmAsk('What happens after I apply?')">After applying</button>
+  </div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo">&#10148;</button></div>
+</div>
+<script>
+(function(){
+  var hist=[],open=false;
+  function ts(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function bubble(txt,mine){
+    var msgs=document.getElementById('jmMsgs');
+    var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');
+    if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}
+    var inner=document.createElement('div');
+    var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+    var t=document.createElement('div');t.className='jmT';t.textContent=ts();
+    inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);
+    msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+  }
+  function typing(s){document.getElementById('jmTyping').style.display=s?'flex':'none';}
+  window.jmOpen=function(){
+    open=!open;
+    document.getElementById('jmBox').classList.toggle('on',open);
+    document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">1</div>';
+    if(open&&!document.getElementById('jmMsgs').children.length)
+      bubble('Hi! Ask me anything about projects and applications.',false);
+  };
+  window.jmAsk=function(txt){document.getElementById('jmInp').value=txt;jmSend();};
+  function jmSend(){
+    var inp=document.getElementById('jmInp');
+    var msg=inp.value.trim();if(!msg)return;
+    inp.value='';bubble(msg,true);hist.push({role:'user',content:msg});typing(true);
+    fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:msg,history:hist.slice(-10)})})
+    .then(function(r){return r.json();})
+    .then(function(d){typing(false);bubble(d.reply||'No response.',false);hist.push({role:'assistant',content:d.reply||'');})
+    .catch(function(){typing(false);bubble('Sorry, could not connect.',false);});
+  }
+  document.getElementById('jmGo').addEventListener('click',jmSend);
+  document.getElementById('jmInp').addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}
+  });
+  document.getElementById('jmInp').addEventListener('input',function(){
+    this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';
+  });
+})();
+</script>
+
+<!-- ══ Scroll button ══ -->
+<button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom"
+    onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</button>
+<script>(function(){var b=document.getElementById('scrollTopBtn');if(b)b.classList.add('visible');})();</script>
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+<script>
+function switchTab(name, btn) {
+    document.querySelectorAll('.proj-tab').forEach(function(t){ t.classList.remove('active'); });
+    btn.classList.add('active');
+    ['browse','mine','assigned'].forEach(function(n){
+        document.getElementById('tab-'+n).style.display = (n===name) ? '' : 'none';
+    });
+}
+function openApplyModal(projId, projTitle) {
+    document.getElementById('applyProjectId').value = projId;
+    document.getElementById('applyModalTitle').textContent = '📩 Apply: ' + projTitle;
+    document.getElementById('applyModal').classList.add('open');
+}
+function closeApplyModal() {
+    document.getElementById('applyModal').classList.remove('open');
+}
+document.getElementById('applyModal').addEventListener('click',function(e){
+    if(e.target===this) closeApplyModal();
+});
+function confirmWithdraw(form, title) {
+    if(confirm('Withdraw your application for "'+title+'"?')) form.submit();
+}
+</script>
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

@@ -1,0 +1,309 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Accounts — JobMate Admin</title>
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <style>
+        body{font-family:'Inter','Segoe UI',sans-serif;background:#EEF4FF;color:#0D1B2A;}
+        .dashboard-layout{display:flex;min-height:100vh;}
+        .sidebar{width:240px;background:linear-gradient(165deg,#0a1520 0%,#0D1B2A 45%,#0f2235 100%);border-right:1px solid rgba(144,202,249,.1);box-shadow:4px 0 28px rgba(13,27,42,.24);display:flex;flex-direction:column;padding:28px 0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0;}
+        .sidebar-header{padding:0 24px 24px;}
+        .logo{font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px;}
+        .logo span{color:#42A5F5;}
+        .user-profile{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0 12px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(144,202,249,.14);border-radius:14px;}
+        .user-info{display:flex;align-items:center;gap:10px;}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);}
+        .user-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.92);}
+        .settings-icon{color:rgba(255,255,255,.4);font-size:14px;}
+        .nav-menu{list-style:none;padding:0 12px;flex:1;}
+        .nav-menu li{margin-bottom:3px;}
+        .nav-menu a{display:flex;align-items:center;gap:12px;padding:11px 14px;color:rgba(255,255,255,.62);text-decoration:none;font-size:14px;border-radius:12px;font-weight:500;transition:all .25s;}
+        .nav-menu a.active{background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(33,150,243,.38);}
+        .nav-menu a:hover:not(.active){background:rgba(255,255,255,.08);color:rgba(255,255,255,.95);transform:translateX(3px);}
+        .nav-icon{font-size:16px;width:20px;flex-shrink:0;}
+        .sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.07);}
+        .sidebar-footer a{display:flex;align-items:center;gap:12px;padding:10px 14px;color:rgba(255,255,255,.55);text-decoration:none;font-size:14px;border-radius:12px;margin-bottom:4px;transition:all .25s;}
+        .sidebar-footer a.logout{color:#FCA5A5;}
+        .sidebar-footer a.logout:hover{background:rgba(220,38,38,.12);}
+        /* Main */
+        .main-content{flex:1;padding:28px 32px;overflow-x:hidden;min-width:0;}
+        .content-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;margin-bottom:24px;border-bottom:1.5px solid #C5D8F0;}
+        .page-title{font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:#0D1B2A;letter-spacing:-.5px;}
+        /* Stats */
+        .ba-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+        .ba-stat{background:#fff;border-radius:14px;padding:18px 20px;border:1px solid #C5D8F0;box-shadow:0 2px 8px rgba(13,27,42,.05);position:relative;overflow:hidden;}
+        .ba-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;}
+        .ba-stat.total::before{background:linear-gradient(90deg,#2196F3,#90CAF9);}
+        .ba-stat.verified::before{background:linear-gradient(90deg,#16A34A,#6EE7B7);}
+        .ba-stat.pending::before{background:linear-gradient(90deg,#D97706,#FCD34D);}
+        .ba-stat-n{font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#0D1B2A;line-height:1;}
+        .ba-stat-l{font-size:12px;font-weight:600;color:#6A8AAA;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+        /* Table */
+        .ba-table-wrap{background:#fff;border-radius:16px;border:1px solid #C5D8F0;box-shadow:0 2px 8px rgba(13,27,42,.05);overflow:hidden;}
+        .ba-table{width:100%;border-collapse:collapse;}
+        .ba-table thead tr{background:#F0F7FF;}
+        .ba-table th{padding:13px 16px;font-size:11px;font-weight:700;color:#6A8AAA;text-transform:uppercase;letter-spacing:1px;text-align:left;border-bottom:1.5px solid #C5D8F0;white-space:nowrap;}
+        .ba-table td{padding:14px 16px;border-bottom:1px solid #EAF1FB;vertical-align:middle;font-size:13px;}
+        .ba-table tbody tr:last-child td{border-bottom:none;}
+        .ba-table tbody tr{transition:background .15s;}
+        .ba-table tbody tr:hover{background:#F8FBFF;}
+        /* User cell */
+        .ba-user{display:flex;align-items:center;gap:10px;}
+        .ba-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+        .ba-user-name{font-weight:700;color:#0D1B2A;font-size:13px;}
+        .ba-user-email{font-size:11px;color:#6A8AAA;margin-top:1px;}
+        /* Role badge */
+        .ba-role{display:inline-flex;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;}
+        .ba-role.employee{background:#E3F2FD;color:#1565C0;}
+        .ba-role.client  {background:#F3E5F5;color:#7B1FA2;}
+        /* Status badge */
+        .ba-verified  {display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:#DCFCE7;color:#16A34A;}
+        .ba-unverified{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:#FEF3C7;color:#D97706;}
+        /* Razorpay ID */
+        .ba-rzp-id{font-family:monospace;font-size:11px;color:#1565C0;background:#EEF4FF;padding:3px 8px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;display:block;}
+        /* Actions */
+        .ba-actions{display:flex;gap:8px;flex-wrap:wrap;}
+        .btn-verify{padding:6px 12px;background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s;}
+        .btn-verify:hover{transform:translateY(-1px);}
+        .btn-unverify{padding:6px 12px;background:#FEF3C7;color:#D97706;border:1.5px solid #FDE68A;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+        .btn-unverify:hover{background:#FEF0A0;}
+        .btn-delete{padding:6px 12px;background:#FEE2E2;color:#DC2626;border:1.5px solid #FECACA;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+        .btn-delete:hover{background:#FDD;}
+        /* Empty */
+        .ba-empty{padding:60px 20px;text-align:center;color:#6A8AAA;}
+        .ba-empty-icon{font-size:48px;margin-bottom:16px;}
+        /* Toast */
+        .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:#0D1B2A;color:#fff;padding:12px 24px;border-radius:99px;font-size:13px;font-weight:600;box-shadow:0 8px 28px rgba(13,27,42,.3);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:9999;white-space:nowrap;}
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+        /* Notif */
+        .emp-notif-btn{position:relative;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 2px 8px rgba(33,150,243,.3);}
+        .emp-notif-badge{position:absolute;top:-3px;right:-3px;background:#ff3b30;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;border:2px solid #fff;min-width:16px;text-align:center;line-height:1.4;}
+        @media(max-width:960px){.ba-stats{grid-template-columns:1fr 1fr;}}
+        @media(max-width:768px){.main-content{padding:18px 14px;}.ba-stats{grid-template-columns:1fr 1fr;}.ba-table th:nth-child(5),.ba-table td:nth-child(5){display:none;}}
+    </style>
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header"><div class="logo"><span>JOB</span>MATE</div></div>
+    <div class="user-profile">
+        <div class="user-info">
+            <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">
+                {% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">{% else %}{{ current_user_initials }}{% endif %}
+            </div>
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <span class="settings-icon">⚙️</span>
+    </div>
+    <ul class="nav-menu">
+        <li><a href="{% url 'dashboard_admin_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'dashboard_admin_employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+        <li><a href="{% url 'dashboard_admin_clients' %}"><span class="nav-icon">👤</span> Clients</a></li>
+        <li><a href="{% url 'dashboard_admin_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+        <li><a href="{% url 'dashboard_admin_departments' %}"><span class="nav-icon">🏷️</span> Departments</a></li>
+        <li><a href="{% url 'dashboard_admin_support' %}"><span class="nav-icon">🎫</span> Support Tickets</a></li>
+        <li><a href="{% url 'admin_bank_accounts' %}" class="active"><span class="nav-icon">🏦</span> Bank Accounts</a></li>
+            <li><a href="{% url 'dashboard_admin_settings' %}"><span class="nav-icon">⚙️</span> Settings</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+    <div class="content-header">
+        <div>
+            <h1 class="page-title">🏦 Bank Accounts</h1>
+            <p style="font-size:14px;color:#6A8AAA;margin-top:4px;">Manage Razorpay contacts and fund accounts for all users</p>
+        </div>
+        <div>{% include 'pages/includes/notif_icon.html' %}</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="ba-stats">
+        <div class="ba-stat total">
+            <div class="ba-stat-n">{{ bank_details|length }}</div>
+            <div class="ba-stat-l">Total Accounts</div>
+        </div>
+        <div class="ba-stat verified">
+            <div class="ba-stat-n" id="stat-verified">{{ verified_count }}</div>
+            <div class="ba-stat-l">Verified</div>
+        </div>
+        <div class="ba-stat pending">
+            <div class="ba-stat-n" id="stat-pending">{{ pending_count }}</div>
+            <div class="ba-stat-l">Pending Verification</div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="ba-table-wrap">
+        {% if bank_details %}
+        <table class="ba-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Bank Details</th>
+                    <th>Razorpay IDs</th>
+                    <th>Status</th>
+                    <th>Added</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for bd in bank_details %}
+            <tr id="row-{{ bd.id }}">
+                <td style="font-weight:700;color:#6A8AAA;">#{{ bd.id }}</td>
+                <td>
+                    <div class="ba-user">
+                        <div class="ba-avatar">{{ bd.user.first_name|first|upper|default:"U" }}</div>
+                        <div>
+                            <div class="ba-user-name">{{ bd.user.get_full_name|default:bd.user.username }}</div>
+                            <div class="ba-user-email">{{ bd.user.email }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% with bd.user.profile.role as role %}
+                    <span class="ba-role {{ role }}">{{ role|capfirst }}</span>
+                    {% endwith %}
+                </td>
+                <td>
+                    <div style="font-weight:600;color:#0D1B2A;font-size:13px;">{{ bd.bank_name }}</div>
+                    <div style="font-size:12px;color:#6A8AAA;">{{ bd.account_holder }}</div>
+                    <div style="font-size:11px;color:#3D5A7A;margin-top:2px;">
+                        ****{{ bd.account_number|slice:"-4:" }} · {{ bd.ifsc_code }} · {{ bd.get_account_type_display }}
+                    </div>
+                </td>
+                <td>
+                    {% if bd.razorpay_contact_id %}
+                    <span class="ba-rzp-id" title="{{ bd.razorpay_contact_id }}">{{ bd.razorpay_contact_id }}</span>
+                    {% endif %}
+                    {% if bd.razorpay_fund_account_id %}
+                    <span class="ba-rzp-id" title="{{ bd.razorpay_fund_account_id }}" style="margin-top:4px;">{{ bd.razorpay_fund_account_id }}</span>
+                    {% endif %}
+                    {% if not bd.razorpay_contact_id and not bd.razorpay_fund_account_id %}
+                    <span style="color:#C5D8F0;font-size:12px;">Not synced</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span id="badge-{{ bd.id }}" class="{% if bd.is_verified %}ba-verified{% else %}ba-unverified{% endif %}">
+                        {% if bd.is_verified %}✅ Verified{% else %}⏳ Pending{% endif %}
+                    </span>
+                </td>
+                <td style="font-size:12px;color:#6A8AAA;white-space:nowrap;">{{ bd.created_at|date:"j M Y" }}</td>
+                <td>
+                    <div class="ba-actions">
+                        <button id="verify-btn-{{ bd.id }}"
+                            class="{% if bd.is_verified %}btn-unverify{% else %}btn-verify{% endif %}"
+                            onclick="toggleVerify({{ bd.id }}, {{ bd.is_verified|yesno:'true,false' }})">
+                            {% if bd.is_verified %}✕ Unverify{% else %}✓ Verify{% endif %}
+                        </button>
+                        <button class="btn-delete" onclick="confirmDelete({{ bd.id }}, '{{ bd.account_holder|escapejs }}')">
+                            🗑 Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="ba-empty">
+            <div class="ba-empty-icon">🏦</div>
+            <p style="font-size:16px;font-weight:700;color:#1C2E40;margin-bottom:6px;">No bank accounts yet</p>
+            <p style="font-size:14px;">Employees and clients will appear here once they add their bank details.</p>
+        </div>
+        {% endif %}
+    </div>
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var CSRF = '{{ csrf_token }}';
+
+function toggleVerify(id, isVerified) {
+    fetch('/admin_app/bank-accounts/' + id + '/verify/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': CSRF},
+        credentials: 'same-origin',
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+        if (d.ok) {
+            var badge = document.getElementById('badge-' + id);
+            var btn   = document.getElementById('verify-btn-' + id);
+            if (d.is_verified) {
+                badge.className = 'ba-verified';
+                badge.innerHTML = '✅ Verified';
+                btn.className   = 'btn-unverify';
+                btn.innerHTML   = '✕ Unverify';
+                btn.setAttribute('onclick', 'toggleVerify(' + id + ', true)');
+                showToast('✅ Account verified successfully!');
+            } else {
+                badge.className = 'ba-unverified';
+                badge.innerHTML = '⏳ Pending';
+                btn.className   = 'btn-verify';
+                btn.innerHTML   = '✓ Verify';
+                btn.setAttribute('onclick', 'toggleVerify(' + id + ', false)');
+                showToast('Account marked as pending.');
+            }
+            updatePendingCount();
+        }
+    })
+    .catch(function(){ showToast('❌ Network error.'); });
+}
+
+function confirmDelete(id, name) {
+    if (!confirm('Delete bank account for "' + name + '"? This cannot be undone.')) return;
+    fetch('/admin_app/bank-accounts/' + id + '/delete/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': CSRF},
+        credentials: 'same-origin',
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+        if (d.ok) {
+            var row = document.getElementById('row-' + id);
+            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(function(){ row.remove(); updatePendingCount(); }, 300); }
+            showToast('🗑 Bank account deleted.');
+        }
+    })
+    .catch(function(){ showToast('❌ Network error.'); });
+}
+
+function updatePendingCount() {
+    var pending  = document.querySelectorAll('.ba-unverified').length;
+    var verified = document.querySelectorAll('.ba-verified').length;
+    var elP = document.getElementById('stat-pending');
+    var elV = document.getElementById('stat-verified');
+    if (elP) elP.textContent = pending;
+    if (elV) elV.textContent = verified;
+}
+
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+
+// Init pending count
+document.addEventListener('DOMContentLoaded', function(){ updatePendingCount(); });
+</script>
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

@@ -1,0 +1,233 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Details — JobMate</title>
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <style>
+        body{font-family:'Inter','Segoe UI',sans-serif;background:#EEF4FF;color:#0D1B2A;}
+        .dashboard-layout{display:flex;min-height:100vh;}
+        /* Sidebar */
+        .sidebar{width:240px;background:linear-gradient(165deg,#0a1520 0%,#0D1B2A 45%,#0f2235 100%);border-right:1px solid rgba(144,202,249,.1);box-shadow:4px 0 28px rgba(13,27,42,.24);display:flex;flex-direction:column;padding:28px 0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0;}
+        .sidebar-header{padding:0 24px 24px;}
+        .logo{font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px;}
+        .logo span{color:#42A5F5;}
+        .user-profile{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0 12px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(144,202,249,.14);border-radius:14px;}
+        .user-info{display:flex;align-items:center;gap:10px;}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);}
+        .user-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.92);}
+        .settings-icon{color:rgba(255,255,255,.4);font-size:14px;}
+        .nav-menu{list-style:none;padding:0 12px;flex:1;}
+        .nav-menu li{margin-bottom:3px;}
+        .nav-menu a{display:flex;align-items:center;gap:12px;padding:11px 14px;color:rgba(255,255,255,.62);text-decoration:none;font-size:14px;border-radius:12px;font-weight:500;transition:all .25s;}
+        .nav-menu a.active{background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(33,150,243,.38);}
+        .nav-menu a:hover:not(.active){background:rgba(255,255,255,.08);color:rgba(255,255,255,.95);transform:translateX(3px);}
+        .nav-icon{font-size:16px;width:20px;flex-shrink:0;}
+        .sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.07);}
+        .sidebar-footer a{display:flex;align-items:center;gap:12px;padding:10px 14px;color:rgba(255,255,255,.55);text-decoration:none;font-size:14px;border-radius:12px;margin-bottom:4px;transition:all .25s;}
+        .sidebar-footer a.logout{color:#FCA5A5;}
+        .sidebar-footer a.logout:hover{background:rgba(220,38,38,.12);}
+        /* Main */
+        .main-content{flex:1;padding:28px 32px;overflow-x:hidden;min-width:0;}
+        .content-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;margin-bottom:28px;border-bottom:1.5px solid #C5D8F0;}
+        .page-title{font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:#0D1B2A;letter-spacing:-.5px;}
+        /* Form card */
+        .bd-card{background:#fff;border-radius:16px;border:1px solid #C5D8F0;box-shadow:0 2px 8px rgba(13,27,42,.05);overflow:hidden;max-width:680px;}
+        .bd-card-header{background:linear-gradient(135deg,#0D1B2A,#1565C0);padding:20px 28px;display:flex;align-items:center;gap:14px;}
+        .bd-card-icon{width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+        .bd-card-title{font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:#fff;}
+        .bd-card-sub{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px;}
+        .bd-card-body{padding:28px;}
+        /* Status banner */
+        .bd-status{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;margin-bottom:24px;font-size:14px;font-weight:600;}
+        .bd-status.verified{background:#DCFCE7;color:#15803D;border:1px solid #BBF7D0;}
+        .bd-status.pending {background:#FEF3C7;color:#D97706;border:1px solid #FDE68A;}
+        .bd-status.none    {background:#EEF4FF;color:#3D5A7A;border:1px solid #C5D8F0;}
+        .bd-status-icon{font-size:20px;}
+        /* Razorpay IDs */
+        .bd-rzp-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+        .bd-rzp-card{background:#F0F7FF;border:1px solid #C5D8F0;border-radius:10px;padding:12px 14px;}
+        .bd-rzp-label{font-size:10px;font-weight:700;color:#6A8AAA;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+        .bd-rzp-value{font-size:12px;font-weight:600;color:#1565C0;word-break:break-all;}
+        /* Fields */
+        .bd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        .bd-field{display:flex;flex-direction:column;gap:6px;}
+        .bd-field.full{grid-column:1/-1;}
+        .bd-label{font-size:11px;font-weight:700;color:#3D5A7A;text-transform:uppercase;letter-spacing:.5px;}
+        .bd-field input,.bd-field select{width:100%;padding:10px 13px;border:1.5px solid #C5D8F0;border-radius:8px;font-size:14px;font-family:inherit;color:#0D1B2A;background:#F8FBFF;outline:none;transition:border-color .2s,box-shadow .2s;}
+        .bd-field input:focus,.bd-field select:focus{border-color:#2196F3;background:#fff;box-shadow:0 0 0 3px rgba(33,150,243,.1);}
+        .bd-errors{color:#DC2626;font-size:12px;margin-top:4px;}
+        /* Submit */
+        .bd-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(33,150,243,.35);transition:transform .2s,box-shadow .2s;margin-top:24px;}
+        .bd-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(33,150,243,.5);}
+        /* Info box */
+        .bd-info-box{background:#EEF4FF;border:1px solid #C5D8F0;border-radius:12px;padding:16px 18px;margin-bottom:24px;}
+        .bd-info-title{font-size:13px;font-weight:700;color:#0D1B2A;margin-bottom:8px;}
+        .bd-info-list{list-style:none;display:flex;flex-direction:column;gap:6px;}
+        .bd-info-list li{font-size:13px;color:#3D5A7A;display:flex;align-items:flex-start;gap:8px;}
+        /* Messages */
+        .msg-success{background:#DCFCE7;color:#15803D;border:1px solid #BBF7D0;border-left:4px solid #16A34A;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:14px;}
+        .msg-warning{background:#FEF3C7;color:#D97706;border:1px solid #FDE68A;border-left:4px solid #D97706;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:14px;}
+        .msg-error  {background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;border-left:4px solid #DC2626;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:14px;}
+        .emp-notif-btn{position:relative;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;text-decoration:none;flex-shrink:0;box-shadow:0 2px 8px rgba(33,150,243,.3);}
+        .emp-notif-badge{position:absolute;top:-3px;right:-3px;background:#ff3b30;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;border:2px solid #fff;min-width:16px;text-align:center;line-height:1.4;}
+        @media(max-width:768px){.bd-grid{grid-template-columns:1fr;}.bd-rzp-row{grid-template-columns:1fr;}.main-content{padding:18px 16px;}}
+    </style>
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header"><div class="logo"><span>JOB</span>MATE</div></div>
+    <div class="user-profile">
+        <div class="user-info">
+            <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">
+                {% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">{% else %}{{ request.user.first_name|first|default:"U" }}{% endif %}
+            </div>
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <span class="settings-icon">⚙️</span>
+    </div>
+    {% if request.user.profile.role == 'employee' %}
+    <ul class="nav-menu">
+        <li><a href="{% url 'dashboard_employee_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'dashboard_employee_task' %}"><span class="nav-icon">📋</span> Task</a></li>
+        <li><a href="{% url 'dashboard_clients' %}"><span class="nav-icon">👥</span> Clients</a></li>
+        <li><a href="{% url 'dashboard_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+        <li><a href="{% url 'employee_chat_inbox' %}"><span class="nav-icon">💬</span> Chat</a></li>
+        <li><a href="{% url 'bank_detail' %}" class="active"><span class="nav-icon">🏦</span> Bank Details</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'dashboard_employee_profile' %}"><span class="nav-icon">👤</span> Profile</a>
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+    {% else %}
+    <ul class="nav-menu">
+        <li><a href="{% url 'client_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'myprofile' %}"><span class="nav-icon">👤</span> My Profile</a></li>
+        <li><a href="{% url 'works' %}"><span class="nav-icon">💼</span> Works</a></li>
+        <li><a href="{% url 'employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+        <li><a href="{% url 'payments' %}"><span class="nav-icon">💳</span> Payments</a></li>
+        <li><a href="{% url 'bank_detail' %}" class="active"><span class="nav-icon">🏦</span> Bank Details</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+    {% endif %}
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+    <div class="content-header">
+        <div>
+            <h1 class="page-title">🏦 Bank Details</h1>
+            <p style="font-size:14px;color:#6A8AAA;margin-top:4px;">Link your bank account to receive payments via Razorpay</p>
+        </div>
+        <div>{% include 'pages/includes/notif_icon.html' %}</div>
+    </div>
+
+    {% if messages %}{% for msg in messages %}
+    <div class="msg-{% if msg.tags == 'success' %}success{% elif msg.tags == 'warning' %}warning{% else %}error{% endif %}">{{ msg }}</div>
+    {% endfor %}{% endif %}
+
+    <div class="bd-card">
+        <div class="bd-card-header">
+            <div class="bd-card-icon">🏦</div>
+            <div>
+                <div class="bd-card-title">Bank Account Information</div>
+                <div class="bd-card-sub">Your details are encrypted and used only for Razorpay payouts</div>
+            </div>
+        </div>
+        <div class="bd-card-body">
+
+            <!-- Info box -->
+            <div class="bd-info-box">
+                <div class="bd-info-title">ℹ️ How it works</div>
+                <ul class="bd-info-list">
+                    <li>✅ <span>Your bank details are used to create a Razorpay contact under the JobMate admin account</span></li>
+                    <li>💰 <span>When a client pays, 80% is transferred to your bank account automatically</span></li>
+                    <li>🔐 <span>Admin receives 20% commission. All transfers are via Razorpay Route</span></li>
+                    <li>✔️ <span>Admin must verify your bank account before payouts are enabled</span></li>
+                </ul>
+            </div>
+
+            <!-- Current status -->
+            {% if bank_detail %}
+            <div class="bd-status {% if bank_detail.is_verified %}verified{% else %}pending{% endif %}">
+                <span class="bd-status-icon">{% if bank_detail.is_verified %}✅{% else %}⏳{% endif %}</span>
+                <div>
+                    <div>{% if bank_detail.is_verified %}Account Verified — Payouts Enabled{% else %}Pending Admin Verification{% endif %}</div>
+                    <div style="font-size:12px;opacity:.75;margin-top:2px;">Last updated: {{ bank_detail.updated_at|date:"j M Y, H:i" }}</div>
+                </div>
+            </div>
+
+            {% if bank_detail.razorpay_contact_id or bank_detail.razorpay_fund_account_id %}
+            <div class="bd-rzp-row">
+                <div class="bd-rzp-card">
+                    <div class="bd-rzp-label">Razorpay Contact ID</div>
+                    <div class="bd-rzp-value">{{ bank_detail.razorpay_contact_id|default:"—" }}</div>
+                </div>
+                <div class="bd-rzp-card">
+                    <div class="bd-rzp-label">Fund Account ID</div>
+                    <div class="bd-rzp-value">{{ bank_detail.razorpay_fund_account_id|default:"—" }}</div>
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="bd-status none">
+                <span class="bd-status-icon">ℹ️</span>
+                <div>No bank account linked yet. Add your details below to receive payments.</div>
+            </div>
+            {% endif %}
+
+            <!-- Form -->
+            <form method="post">{% csrf_token %}
+                <div class="bd-grid">
+                    <div class="bd-field full">
+                        <label class="bd-label">Account Holder Name *</label>
+                        {{ form.account_holder }}
+                        {% if form.account_holder.errors %}<div class="bd-errors">{{ form.account_holder.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="bd-field">
+                        <label class="bd-label">Account Number *</label>
+                        {{ form.account_number }}
+                        {% if form.account_number.errors %}<div class="bd-errors">{{ form.account_number.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="bd-field">
+                        <label class="bd-label">IFSC Code *</label>
+                        {{ form.ifsc_code }}
+                        {% if form.ifsc_code.errors %}<div class="bd-errors">{{ form.ifsc_code.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="bd-field">
+                        <label class="bd-label">Bank Name *</label>
+                        {{ form.bank_name }}
+                        {% if form.bank_name.errors %}<div class="bd-errors">{{ form.bank_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="bd-field">
+                        <label class="bd-label">Account Type *</label>
+                        {{ form.account_type }}
+                        {% if form.account_type.errors %}<div class="bd-errors">{{ form.account_type.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="bd-field full">
+                        <label class="bd-label">Branch Name <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+                        {{ form.branch_name }}
+                    </div>
+                </div>
+                <button type="submit" class="bd-btn">
+                    {% if bank_detail %}🔄 Update Bank Details{% else %}🏦 Save & Create Razorpay Account{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+</div>
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

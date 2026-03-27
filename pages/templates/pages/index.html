@@ -1,0 +1,332 @@
+{% extends 'pages/base.html' %}
+{% load static %}
+
+{% block title %}JobMate{% endblock %}
+{% block extra_css %}
+<style>
+    .hero { background-image: url("{% static 'assets/Frame 8 (1).png' %}"); background-size: cover; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>ON-DEMAND SKILLED TALENT<br> RIGHT WHEN YOU NEED IT</h1>
+            <p>Hire verified professionals for hours, days, or months — with transparent pricing, instant booking, 
+                and real-time work tracking.</p>
+            <a href="{% url 'register' %}" class="btn-get-started" style="text-decoration:none;display:inline-block;">GET STARTED <span>→</span></a>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>
+                        A SMARTER SOLUTION FOR FLEXIBLE AND SHORT-TERM WORKFORCE HIRING
+                    </h2>
+                    {% comment %} <h3>Flexible staffing made simple.</h3> {% endcomment %}
+                </div>
+                <div class="about-description">
+                    <p>JobMate is a service-based platform built to solve short-term staffing challenges. Whether you need a developer for a quick fix, a designer for a campaign, or a support executive for peak hours, JobMate helps you find the right person fast. Every profile is structured with skills, experience, and availability — so you can hire with clarity and confidence.</p>
+                    <p>With flexible hiring options ranging from hourly to monthly engagements, JobMate ensures complete transparency in pricing and availability. Our structured employee profiles, real-time tracking system, and streamlined booking process make workforce management efficient and hassle-free. By bridging the gap between skilled professionals and stakeholders, JobMate creates a trusted environment where productivity, accountability, and convenience come together seamlessly.</p>
+                    <a href="{% url 'about' %}" class="btn-know-more">KNOW MORE</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="features-content">
+                <div class="features-text">
+                    <h2>BUILD YOUR TEAM IN MINUTES — NOT DAYS</h2>
+                    <p>Search by skill, department, and availability. Choose a hiring duration that fits your needs and get a clear cost estimate upfront. Track progress, update work status, and review the service once completed.</p>
+                    <a href="{% url 'roles' %}" class="features-link">VIEW OUR SERVICES <span>→</span></a>
+                </div>
+                <div class="features-images">
+                    <div class="feature-img">
+                        <img src="{% static 'assets/Dashboard.png' %}">
+                    </div>
+                    <div class="feature-img">
+                        <img src="{% static 'assets/Dashboard (1).png' %}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>{{ total_employees }}+</h3>
+                    <p>Employees</p>
+                </div>
+                <div class="stat-item">
+                    <h3>{{ total_clients }}+</h3>
+                    <p>Clients</p>
+                </div>
+                <div class="stat-item">
+                    <h3>{{ total_tasks }}+</h3>
+                    <p>Tasks</p>
+                </div>
+                <div class="stat-item">
+                    <h3>{{ total_depts }}+</h3>
+                    <p>Departments</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        <!-- Roles & Skills — Department Carousel -->
+    <section class="index-roles-section" id="roles">
+        <div class="container">
+
+            <div class="roles-header">
+                <h2>ROLES &amp; SKILLS</h2>
+                <a href="{% url 'roles' %}" class="view-all">VIEW ALL CATEGORIES</a>
+            </div>
+
+            {% if departments %}
+            <!-- Dept slider track wrapper -->
+            <div class="dept-slider-outer" id="deptSliderOuter">
+                <div class="dept-slider-track" id="deptSliderTrack">
+                    {% for dept in departments %}
+                    <a href="{% url 'rolesinner_id' dept.id %}" class="dept-card" title="{{ dept.name }}">
+                        <div class="dept-card-bg">
+                            {% if dept.image %}
+                                <img src="{{ dept.image.url }}" alt="{{ dept.name }}" loading="lazy">
+                            {% elif forloop.counter == 1 or forloop.counter == 6 or forloop.counter == 11 %}
+                                <img src="{% static 'assets/Frame 184.png' %}" alt="{{ dept.name }}" loading="lazy">
+                            {% elif forloop.counter == 2 or forloop.counter == 7 or forloop.counter == 12 %}
+                                <img src="{% static 'assets/Frame 184 (1).png' %}" alt="{{ dept.name }}" loading="lazy">
+                            {% elif forloop.counter == 3 or forloop.counter == 8 or forloop.counter == 13 %}
+                                <img src="{% static 'assets/Frame 184 (2).png' %}" alt="{{ dept.name }}" loading="lazy">
+                            {% elif forloop.counter == 4 or forloop.counter == 9 %}
+                                <img src="{% static 'assets/Frame 184 (3).png' %}" alt="{{ dept.name }}" loading="lazy">
+                            {% else %}
+                                <img src="{% static 'assets/Frame 184 (4).png' %}" alt="{{ dept.name }}" loading="lazy">
+                            {% endif %}
+                            <div class="dept-card-overlay"></div>
+                        </div>
+                        <div class="dept-card-label">
+                            <span class="dept-card-name">{{ dept.name }}</span>
+                        </div>
+                        <div class="dept-card-arrow">→</div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="dept-slider-controls">
+                <button class="dept-ctrl-btn" id="deptPrev" aria-label="Previous">&#8592;</button>
+
+                <!-- Dot indicators -->
+                <div class="dept-slider-dots" id="deptDots">
+                    {% for dept in departments %}
+                    <button class="dept-dot{% if forloop.first %} active{% endif %}" data-idx="{{ forloop.counter0 }}" aria-label="{{ dept.name }}"></button>
+                    {% endfor %}
+                </div>
+
+                <button class="dept-ctrl-btn" id="deptNext" aria-label="Next">&#8594;</button>
+            </div>
+
+            {% else %}
+            <!-- Empty state -->
+            <div style="text-align:center;padding:60px 0;opacity:.5;">
+                <p style="font-size:16px;">No departments added yet.</p>
+                <a href="{% url 'roles' %}" class="view-all" style="margin-top:12px;display:inline-block;">Browse All Roles →</a>
+            </div>
+            {% endif %}
+
+        </div>
+    </section>
+
+    <script>
+    (function(){
+        var track  = document.getElementById('deptSliderTrack');
+        var outer  = document.getElementById('deptSliderOuter');
+        var dots   = document.querySelectorAll('#deptDots .dept-dot');
+        if (!track || !outer) return;
+
+        var cards      = track.querySelectorAll('.dept-card');
+        var total      = cards.length;
+        var cardW      = 0;   // measured live
+        var visible    = 4;   // cards shown at once
+        var cur        = 0;
+        var autoTimer  = null;
+
+        // How many cards fit in the visible window
+        function calcVisible() {
+            var w = outer.offsetWidth;
+            if (w < 480)       return 1;
+            else if (w < 720)  return 2;
+            else if (w < 1000) return 3;
+            else               return 4;
+        }
+
+        function measure() {
+            visible = calcVisible();
+            // card width = outer width / visible cards, minus gap
+            var gap = 20;
+            cardW = (outer.offsetWidth - gap * (visible - 1)) / visible;
+            // Apply width to each card
+            cards.forEach(function(c) {
+                c.style.minWidth = cardW + 'px';
+                c.style.maxWidth = cardW + 'px';
+            });
+        }
+
+        function maxIdx() {
+            return Math.max(0, total - visible);
+        }
+
+        function goTo(idx, skipAuto) {
+            if (idx < 0)         idx = 0;
+            if (idx > maxIdx())  idx = maxIdx();
+            cur = idx;
+            var gap = 20;
+            track.style.transform = 'translateX(-' + (cur * (cardW + gap)) + 'px)';
+            // Update dots
+            dots.forEach(function(d, i) { d.classList.toggle('active', i === cur); });
+            if (!skipAuto) resetAuto();
+        }
+
+        function resetAuto() {
+            clearInterval(autoTimer);
+            autoTimer = setInterval(function(){
+                var next = cur + 1;
+                if (next > maxIdx()) next = 0;
+                goTo(next, true);
+            }, 3500);
+        }
+
+        // Init
+        measure();
+        goTo(0, true);
+        resetAuto();
+
+        window.addEventListener('resize', function(){
+            measure();
+            goTo(Math.min(cur, maxIdx()), true);
+        });
+
+        document.getElementById('deptPrev').addEventListener('click', function(){
+            goTo(cur - 1);
+        });
+        document.getElementById('deptNext').addEventListener('click', function(){
+            goTo(cur + 1);
+        });
+
+        dots.forEach(function(d, i){
+            d.addEventListener('click', function(){ goTo(i); });
+        });
+
+        // Touch/swipe support
+        var touchX = null;
+        outer.addEventListener('touchstart', function(e){ touchX = e.touches[0].clientX; }, {passive:true});
+        outer.addEventListener('touchend', function(e){
+            if (touchX === null) return;
+            var dx = touchX - e.changedTouches[0].clientX;
+            if (Math.abs(dx) > 40) goTo(dx > 0 ? cur + 1 : cur - 1);
+            touchX = null;
+        }, {passive:true});
+    })();
+    </script>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section">
+        <div class="container">
+            <h2>CLIENTS SAY ABOUT US</h2>
+            <div class="ts-outer">
+                <div class="ts-track" id="tsTrack">
+                    {% if testimonial_groups %}
+                        {% for group in testimonial_groups %}
+                        <div class="ts-slide">
+                            {% for t in group %}
+                            <div class="testimonial-card">
+                                <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+                                    <div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#2196F3,#1565C0);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                        {% if t.author_image %}
+                                            <img src="{{ t.author_image.url }}" style="width:100%;height:100%;object-fit:cover;" alt="{{ t.author_name }}">
+                                        {% else %}
+                                            <span style="color:#fff;font-weight:700;font-size:18px;">{{ t.author_name|first|upper }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--c-t1);">{{ t.author_name }}</h3>
+                                        {% if t.author_title %}<p style="margin:2px 0 0;font-size:12px;color:var(--c-tm);">{{ t.author_title }}</p>{% endif %}
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:10px;">
+                                    {% for i in "12345" %}
+                                        <span style="font-size:16px;color:{% if forloop.counter <= t.rating %}#f59e0b{% else %}#ddd{% endif %};">★</span>
+                                    {% endfor %}
+                                </div>
+                                <p class="testimonial-text">"{{ t.text }}"</p>
+                                <p class="testimonial-date">{{ t.date|date:"j M Y" }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="ts-slide">
+                            <div class="testimonial-card">
+                                <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+                                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#1565C0);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <span style="color:#fff;font-weight:700;font-size:18px;">J</span>
+                                    </div>
+                                    <div>
+                                        <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--c-t1);">JobMate Client</h3>
+                                        <p style="margin:2px 0 0;font-size:12px;color:var(--c-tm);">Verified User</p>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:10px;">
+                                    <span style="font-size:16px;color:#f59e0b;">★★★★★</span>
+                                </div>
+                                <p class="testimonial-text">"JobMate connects businesses with skilled professionals instantly. Testimonials will appear here once added by the admin."</p>
+                                <p class="testimonial-date">—</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="ts-dots" id="tsDots"></div>
+        </div>
+    </section>
+    <script>
+    (function(){
+        var track  = document.getElementById('tsTrack');
+        var dotsEl = document.getElementById('tsDots');
+        if (!track) return;
+        var slides = track.querySelectorAll('.ts-slide');
+        var total  = slides.length;
+        if (total <= 1) { dotsEl.style.display = 'none'; return; }
+        var cur = 0;
+
+        for (var i = 0; i < total; i++) {
+            var d = document.createElement('button');
+            d.className = 'ts-dot' + (i === 0 ? ' active' : '');
+            (function(n){ d.addEventListener('click', function(){ go(n); }); })(i);
+            dotsEl.appendChild(d);
+        }
+
+        function go(n) {
+            cur = (n + total) % total;
+            track.style.transform = 'translateX(-' + (cur * 100) + '%)';
+            dotsEl.querySelectorAll('.ts-dot').forEach(function(d, i){
+                d.classList.toggle('active', i === cur);
+            });
+        }
+
+        setInterval(function(){ go(cur + 1); }, 4000);
+    })();
+    </script>
+<!-- Footer -->
+{% endblock %}

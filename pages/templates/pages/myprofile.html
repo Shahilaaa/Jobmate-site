@@ -1,0 +1,550 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - JobMate</title>    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page-myprofile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile-mini">
+            <div class="user-info">
+                <div class="user-avatar-mini" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                    {% if current_user_avatar_url %}
+                        <img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                    {% else %}
+                        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-weight:700;">{{ request.user.first_name|first|default:"U" }}</span>
+                    {% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span style="color:var(--c-tm);font-size:14px;">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'client_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'myprofile' %}" class="active"><span class="nav-icon">👤</span> My Profile</a></li>
+            <li><a href="{% url 'works' %}"><span class="nav-icon">💼</span> Works</a></li>
+            <li><a href="{% url 'employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+            <li><a href="{% url 'payments' %}"><span class="nav-icon">💳</span> Payments</a></li>
+            <li><a href="{% url 'support' %}"><span class="nav-icon">⚙️</span> Support</a></li>
+            <li><a href="{% url 'notifications' %}"><span class="nav-icon">🔔</span> Notifications{% with cnt=unread_notifications %}{% if cnt %}<span class="nav-notif-badge">{% if cnt > 99 %}99+{% else %}{{ cnt }}{% endif %}</span>{% endif %}{% endwith %}</a></li>
+            <li><a href="{% url 'bank_detail' %}"><span class="nav-icon">🏦</span> Bank Details</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1 class="page-title">My Profile</h1>
+            <div class="header-actions">
+                <div class="search-box">
+                    <form method="get" action="/user_app/employee/" data-nlp-search="employees" style="display:flex;width:100%;position:relative;">
+                        
+                        <input type="text" class="search-input" placeholder="Search employees..." name="q" value="{{ request.GET.q|default:'' }}">
+                        <button type="submit" class="nlp-submit-btn" title="Search">🔍</button>
+                    </form>
+                </div>
+                {% include 'pages/includes/notif_icon.html' %}
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="{% if msg.tags == 'success' %}msg-success{% else %}msg-error{% endif %}">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" id="profile-form">{% csrf_token %}
+        <!-- Hidden file inputs — must be inside the form to be submitted -->
+        <input type="file" id="avatarFileInput" name="profile_image" accept="image/*" style="display:none;" onchange="previewAvatar(this)">
+        <input type="file" id="bgFileInput" name="background_image" accept="image/*" style="display:none;" onchange="previewBanner(this)">
+
+        <!-- Profile Banner with dynamic bg + avatar -->
+        <div id="profileBanner" class="profile-banner" style="position:relative;overflow:hidden;min-height:220px;background:none;">
+            <!-- Background layer -->
+            <div id="bannerBg" style="position:absolute;inset:0;{% if current_user_bg_url %}background:url('{{ current_user_bg_url }}') center/cover no-repeat;{% else %}background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);{% endif %}transition:background .3s;"></div>
+            <!-- Dark overlay — gradient so bottom (text area) is always readable -->
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.45) 50%,rgba(0,0,0,0.25) 100%);"></div>
+            <!-- Content row -->
+            <div style="position:relative;z-index:2;display:flex;align-items:flex-end;gap:24px;padding:32px 40px;flex-wrap:wrap;">
+                <!-- Avatar -->
+                <div class="profile-avatar-wrap" style="position:relative;">
+                    <div class="profile-avatar" id="avatarCircle" style="cursor:pointer;" onclick="document.getElementById('avatarFileInput').click()" title="Click to change photo">
+                        {% if current_user_avatar_url %}
+                            <img id="avatarImg" src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="profile">
+                        {% else %}
+                            <span id="avatarInitial">{{ request.user.first_name|first|default:"U" }}</span>
+                        {% endif %}
+                    </div>
+                    <div style="position:absolute;bottom:4px;right:4px;background:var(--c-b5);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:2px solid #fff;" onclick="document.getElementById('avatarFileInput').click()" title="Change photo">📷</div>
+                </div>
+                <!-- Info -->
+                <div class="profile-info-banner">
+                    <div class="profile-name-banner" style="font-size:24px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7),0 1px 2px rgba(0,0,0,.9);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">{{ request.user.get_full_name|default:request.user.username }}</div>
+                    <div class="profile-meta-banner" style="font-size:14px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-bottom:4px;">{{ request.user.email }}</div>
+                    {% if request.user.profile.role == 'employee' %}
+                    <div class="profile-meta-banner" style="font-size:14px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-bottom:4px;">{{ request.user.profile.employee.title|default:"Employee" }} · ₹{{ request.user.profile.employee.hourly_rate }}/hr</div>
+                    {% elif request.user.profile.role == 'client' %}
+                    <div class="profile-meta-banner" style="font-size:14px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-bottom:4px;">Client{% if request.user.profile.client.company %} · {{ request.user.profile.client.company }}{% endif %}</div>
+                    {% endif %}
+                    <div class="profile-badges" style="margin-top:10px;">
+                        <span class="badge" style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,.35);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);">{{ request.user.profile.role|capfirst }}</span>
+                        {% if request.user.profile.role == 'employee' and request.user.profile.employee.is_available %}
+                        <span class="badge green" style="background:rgba(39,174,96,.4);border-color:rgba(39,174,96,.6);color:#b8ffcc;">✓ Available</span>
+                        {% endif %}
+                        {% if request.user.profile.phone %}
+                        <span class="badge" style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,.35);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);">📞 {{ request.user.profile.phone }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Change Banner button + inline Save (top-right) -->
+                <div style="position:absolute;top:16px;right:16px;display:flex;gap:8px;align-items:center;">
+                    <button type="button" onclick="document.getElementById('bgFileInput').click()"
+                        style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.5);color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px);font-family:inherit;text-shadow:0 1px 3px rgba(0,0,0,.5);">
+                        🖼 Change Banner
+                    </button>
+                    <button type="submit" id="banner-save-btn"
+                        style="display:none;background:#2196F3;border:1.5px solid rgba(255,255,255,0.6);color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(33,150,243,.45);">
+                        💾 Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Basic Info + Role-Specific Side by Side -->
+        <div class="content-grid">
+            <!-- Personal Information -->
+            <div class="content-section">
+                <div class="section-header">
+                    <span class="section-title">Personal Information</span>
+                    <button type="button" class="edit-toggle-btn" onclick="toggleEdit('personal')">✎ Edit</button>
+                </div>
+                <!-- View Mode -->
+                <div id="personal-view" class="view-mode">
+                    <div class="info-row">
+                        <span class="info-label">Full Name</span>
+                        <span class="info-value">{{ request.user.get_full_name|default:"Not set" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ request.user.email }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{ request.user.profile.phone|default:"Not set" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Bio</span>
+                        <span class="info-value">{{ request.user.profile.bio|default:"No bio added yet" }}</span>
+                    </div>
+                </div>
+                <!-- Edit Mode -->
+                <div id="personal-edit" class="edit-form">
+                    <div class="form-row">
+                        <label>First Name</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="form-row">
+                        <label>Last Name</label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="form-row">
+                        <label>Phone</label>
+                        {{ form.phone }}
+                    </div>
+                    <div class="form-row">
+                        <label>Bio</label>
+                        {{ form.bio }}
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:8px;">
+                        <button type="submit" class="save-btn">💾 Save Changes</button>
+                        <button type="button" class="cancel-btn" onclick="toggleEdit('personal')">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Details -->
+            <div class="content-section">
+                <div class="section-header">
+                    <span class="section-title">{% if request.user.profile.role == 'employee' %}Professional Details{% else %}Account Details{% endif %}</span>
+                    <button type="button" class="edit-toggle-btn" onclick="toggleEdit('role')">✎ Edit</button>
+                </div>
+                <!-- View Mode -->
+                <div id="role-view" class="view-mode">
+                    {% if request.user.profile.role == 'employee' %}
+                    <div class="info-row">
+                        <span class="info-label">Job Title</span>
+                        <span class="info-value">{{ request.user.profile.employee.title|default:"Not set" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Department</span>
+                        <span class="info-value">{{ request.user.profile.employee.department.name|default:"Not set" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Skill</span>
+                        <span class="info-value">{% if request.user.profile.employee.skill %}<span class="skill-tag">{{ request.user.profile.employee.skill.name }}</span>{% else %}Not set{% endif %}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Hourly Rate</span>
+                        <span class="info-value">₹{{ request.user.profile.employee.hourly_rate }}/hr</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Availability</span>
+                        <span class="info-value">{% if request.user.profile.employee.is_available %}<span style="color:var(--c-green);font-weight:600;">✓ Available</span>{% else %}<span style="color:#e74c3c;">✗ Unavailable</span>{% endif %}</span>
+                    </div>
+                    {% elif request.user.profile.role == 'client' %}
+                    <div class="info-row">
+                        <span class="info-label">Company</span>
+                        <span class="info-value">{{ request.user.profile.client.company|default:"Not set" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Account Type</span>
+                        <span class="info-value">Client / Employer</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Member Since</span>
+                        <span class="info-value">{{ request.user.date_joined|date:"j M Y" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Edit Mode -->
+                <div id="role-edit" class="edit-form">
+                    {% if cform %}
+                    <div class="form-row">
+                        <label>Company Name</label>
+                        {{ cform.company }}
+                    </div>
+                    {% endif %}
+                    {% if eform %}
+                    <div class="form-row">
+                        <label>Job Title</label>
+                        {{ eform.title }}
+                    </div>
+                    <div class="form-row">
+                        <label>Department</label>
+                        {{ eform.department }}
+                    </div>
+                    <div class="form-row">
+                        <label>Skill</label>
+                        {{ eform.skill }}
+                    </div>
+                    <div class="form-row">
+                        <label>Hourly Rate (₹)</label>
+                        {{ eform.hourly_rate }}
+                    </div>
+
+                    <div class="form-row" style="display:flex;align-items:center;gap:10px;">
+                        {{ eform.is_available }}
+                        <label style="font-size:14px;margin-bottom:0;">Available for new work</label>
+                    </div>
+                    {% endif %}
+                    <div style="display:flex;gap:10px;margin-top:8px;">
+                        <button type="submit" class="save-btn">💾 Save Changes</button>
+                        <button type="button" class="cancel-btn" onclick="toggleEdit('role')">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button (visible when any edit mode is active) -->
+        <div id="save-bar" style="display:none;background:var(--c-white);border-radius:12px;padding:20px 25px;margin-bottom:20px;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+            <button type="submit" class="save-btn">💾 SAVE ALL CHANGES</button>
+            <span style="font-size:13px;color:var(--c-tm);">Changes will be saved to your profile</span>
+        </div>
+        </form>
+
+        <!-- Account Stats + Live Charts -->
+        <div class="content-section" style="padding-bottom:0;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+                <div style="text-align:center;padding:18px;background:#f0f7ff;border-radius:8px;">
+                    <div style="font-size:24px;font-weight:800;color:var(--c-b5);">{{ request.user.date_joined|date:"Y" }}</div>
+                    <div style="font-size:12px;color:var(--c-tm);margin-top:4px;">Member Since</div>
+                </div>
+                <div style="text-align:center;padding:18px;background:#f0fff4;border-radius:8px;">
+                    <div style="font-size:24px;font-weight:800;color:var(--c-green);">{{ request.user.profile.role|capfirst }}</div>
+                    <div style="font-size:12px;color:var(--c-tm);margin-top:4px;">Account Role</div>
+                </div>
+                <div style="text-align:center;padding:18px;background:var(--c-white)8f0;border-radius:8px;">
+                    <div style="font-size:24px;font-weight:800;color:#ff9800;">{{ request.user.last_login|date:"j M"|default:"—" }}</div>
+                    <div style="font-size:12px;color:var(--c-tm);margin-top:4px;">Last Login</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Floating Chat -->
+<a style="position:fixed;bottom:28px;right:28px;background:var(--c-b5);color:#fff;border-radius:50%;width:54px;height:54px;display:flex;align-items:center;justify-content:center;font-size:24px;text-decoration:none;box-shadow:0 4px 14px rgba(33,150,243,0.4);z-index:999;" href="{% url 'employee' %}" aria-label="Browse Employees">💬</a>
+
+<script>
+function previewAvatar(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const circle = document.getElementById('avatarCircle');
+        const initial = document.getElementById('avatarInitial');
+        if (initial) initial.remove();
+        let img = document.getElementById('avatarImg');
+        if (!img) {
+            img = document.createElement('img');
+            img.id = 'avatarImg';
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+            circle.prepend(img);
+        }
+        img.src = e.target.result;
+        showSaveBar();
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function previewBanner(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('bannerBg').style.background =
+            "url('" + e.target.result + "') center / cover no-repeat";
+        showSaveBar();
+        var btn = document.getElementById('banner-save-btn');
+        if (btn) btn.style.display = 'inline-flex';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function showSaveBar() {
+    const bar = document.getElementById('save-bar');
+    if (bar) { bar.style.display = 'flex'; bar.style.alignItems = 'center'; }
+}
+
+function toggleEdit(section) {
+    var viewEl = document.getElementById(section + '-view');
+    var editEl = document.getElementById(section + '-edit');
+    var saveBar = document.getElementById('save-bar');
+    if (editEl.classList.contains('active')) {
+        editEl.classList.remove('active');
+        viewEl.classList.remove('hidden');
+        var anyOpen = document.querySelectorAll('.edit-form.active').length > 0;
+        saveBar.style.display = anyOpen ? 'flex' : 'none';
+    } else {
+        editEl.classList.add('active');
+        viewEl.classList.add('hidden');
+        saveBar.style.display = 'flex';
+    }
+}
+</script>
+
+
+    <!-- ══ JobMate AI Chatbot ══ -->
+
+    <button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">
+      🤖<div id="jmDot">1</div>
+    </button>
+
+    <div id="jmBox">
+      <div id="jmHead">
+        <div class="av">🤖</div>
+        <div class="info">
+          <div class="t">JobMate AI</div>
+          <div class="s"><span class="dot"></span>Online — Ask me anything</div>
+        </div>
+        <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+      </div>
+      <div id="jmMsgs"></div>
+      <div id="jmTyping">
+        <div class="jmAv">🤖</div>
+        <div class="jmDots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="jmChips">
+        <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+        <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+        <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+        <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+      </div>
+      <div id="jmFoot">
+        <textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea>
+        <button id="jmGo" title="Send">&#10148;</button>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var hist=[], open=false;
+
+      function hhmmss(){
+        var d=new Date();
+        return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      }
+
+      function bubble(txt, mine){
+        var msgs=document.getElementById('jmMsgs');
+        var wrap=document.createElement('div');
+        wrap.className='jmRow'+(mine?' me':'');
+        if(!mine){
+          var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);
+        }
+        var inner=document.createElement('div');
+        var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+        var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();
+        inner.appendChild(b);inner.appendChild(t);
+        wrap.appendChild(inner);
+        msgs.appendChild(wrap);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      function typing(show){
+        document.getElementById('jmTyping').style.display=show?'flex':'none';
+        if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}
+      }
+
+      window.jmOpen=function(){
+        open=!open;
+        document.getElementById('jmBox').classList.toggle('on',open);
+        document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+        if(open){
+          if(!document.getElementById('jmMsgs').children.length){
+            bubble('Hi! I am the JobMate AI assistant. I can help you find skilled employees, request tasks, track work, manage payments, and more. How can I help you today?', false);
+          }
+          setTimeout(function(){
+            var inp=document.getElementById('jmInp');
+            if(inp) inp.focus();
+          },200);
+        }
+      };
+
+      window.jmAsk=function(txt){
+        document.getElementById('jmChips').style.display='none';
+        document.getElementById('jmInp').value=txt;
+        jmSend();
+      };
+
+      function jmSend(){
+        var inp=document.getElementById('jmInp');
+        var msg=inp.value.trim();
+        if(!msg) return;
+        inp.value='';inp.style.height='';
+        document.getElementById('jmChips').style.display='none';
+        bubble(msg, true);
+        hist.push({role:'user',content:msg});
+        typing(true);
+        fetch('/chatbot/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({message:msg,history:hist.slice(-10)})
+        })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(d){
+          typing(false);
+          bubble(d.reply||'Sorry, no response.', false);
+          hist.push({role:'assistant',content:d.reply||''});
+        })
+        .catch(function(err){
+          typing(false);
+          bubble('Sorry, could not connect. Please try again.', false);
+        });
+      }
+
+      document.getElementById('jmGo').addEventListener('click', jmSend);
+
+      document.getElementById('jmInp').addEventListener('keydown', function(e){
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}
+      });
+
+      document.getElementById('jmInp').addEventListener('input', function(){
+        this.style.height='';
+        this.style.height=Math.min(this.scrollHeight,80)+'px';
+      });
+
+      // Show badge after 4s
+      setTimeout(function(){
+        if(!open){
+          var dot=document.getElementById('jmDot');
+          if(dot) dot.style.display='flex';
+        }
+      },4000);
+    })();
+    </script>
+    <!-- ══ End JobMate AI Chatbot ══ -->
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 96px;
+        right: 28px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content: ''; position: absolute; inset: -4px; border-radius: 50%;
+        border: 2px solid rgba(144,202,249,0.45);
+        animation: stPulse 2.5s ease-in-out infinite; pointer-events: none;
+    }
+    @keyframes stPulse {
+        0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.35);opacity:0;}
+    }
+    </style>
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

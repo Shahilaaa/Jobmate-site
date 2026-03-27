@@ -1,0 +1,756 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - Employee Dashboard</title>
+  <link rel="stylesheet" href="{% static 'css/page-employee-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+ <!-- Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><span>JOB</span>MATE</div>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-info">
+                    <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">{% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">{% else %}{{ current_user_initials }}{% endif %}</div>
+                    <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                </div>
+                <span class="settings-icon">⚙️</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li><a href="{% url 'dashboard_employee_dashboard' %}" class="active"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="{% url 'dashboard_employee_task' %}"><span class="nav-icon">📋</span> Task</a></li>
+                <li><a href="{% url 'employee_projects' %}"><span class="nav-icon">📁</span> Projects</a></li>
+                <li><a href="{% url 'dashboard_clients' %}"><span class="nav-icon">👥</span> Clients</a></li>
+                <li><a href="{% url 'dashboard_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+                <li><a href="{% url 'employee_chat_inbox' %}"><span class="nav-icon">💬</span> Chat</a></li>
+                <li><a href="{% url 'bank_detail' %}"><span class="nav-icon">🏦</span> Bank Details</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="{% url 'dashboard_employee_profile' %}"><span class="nav-icon">👤</span> Profile</a>
+                <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="content-header">
+                <h1 class="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <form method="get" action="" data-nlp-search="tasks_emp" class="page-search-form">
+                        <span class="page-search-icon">🔍</span>
+                        <input type="text" name="q" value="{{ q|default:'' }}" class="page-search-input" placeholder="Search tasks...">
+                        <button type="submit" class="page-search-btn">AI</button>
+                    </form>
+                    {% include 'pages/includes/notif_icon.html' %}
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+
+                <!-- Tasks -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-info">
+                            <h3>Total Tasks</h3>
+                            <p>{{ stats.completed }} completed · {{ stats.active }} active</p>
+                        </div>
+                        <div class="stat-icon blue">📋</div>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-change" style="font-size:11px;color:var(--c-tm);">{{ stats.pending }} pending</span>
+                        <span class="stat-value">{{ stats.total_tasks|default:'0' }}</span>
+                    </div>
+                </div>
+
+                <!-- Projects -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-info">
+                            <h3>Total Projects</h3>
+                            <p>{{ stats.proj_completed }} completed · {{ stats.proj_active }} active</p>
+                        </div>
+                        <div class="stat-icon" style="background:var(--c-white)3e0;">📁</div>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-change" style="font-size:11px;color:var(--c-tm);">assigned projects</span>
+                        <span class="stat-value">{{ stats.total_projects|default:'0' }}</span>
+                    </div>
+                </div>
+
+                <!-- Revenue -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-info">
+                            <h3>Total Revenue</h3>
+                            <p>Tasks + Projects combined</p>
+                        </div>
+                        <div class="stat-icon green">💰</div>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-change" style="font-size:11px;color:var(--c-tm);">₹{{ stats.task_revenue|floatformat:0 }} tasks · ₹{{ stats.proj_revenue|floatformat:0 }} proj</span>
+                        <span class="stat-value">₹{{ stats.total_revenue|floatformat:0 }}</span>
+                    </div>
+                </div>
+
+                <!-- Hours -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-info">
+                            <h3>Hours Worked</h3>
+                            <p>Logged across all tasks</p>
+                        </div>
+                        <div class="stat-icon pink">⏱</div>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-change" style="font-size:11px;color:var(--c-tm);">{{ stats.submitted }} submitted</span>
+                        <span class="stat-value">{{ stats.total_hours|default:'0' }}</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Content Grid -->
+            {% if q %}<div class="nlp-result-banner"><span>🤖 AI Search: <strong>{{ q }}</strong></span><a href="?" class="nlp-clear-btn">✕ Clear</a></div>{% endif %}
+      <div class="content-grid" style="grid-template-columns:1fr 1fr;gap:20px;">
+
+                <!-- ── Tasks Card ── -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2 class="card-title">📋 Recent Tasks</h2>
+                        <a href="{% url 'dashboard_employee_task' %}" style="font-size:12px;color:var(--c-b5);text-decoration:none;font-weight:600;">View all →</a>
+                    </div>
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>Task Name</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in tasks %}
+                            <tr>
+                                <td><a style="color:inherit;text-decoration:none;font-weight:600;" href="{% url 'dashboard_task_detail_id' t.id %}">{{ t.title|truncatechars:28 }}</a></td>
+                                <td style="white-space:nowrap;font-size:12px;color:var(--c-tm);">{{ t.created_at|date:"j M" }}</td>
+                                <td>
+                                    {% if t.status == 'completed' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b0);color:var(--c-green);">✓</span>
+                                    {% elif t.status == 'in_progress' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b1);color:var(--c-b8);">▶</span>
+                                    {% elif t.status == 'submitted' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-white)3e0;color:var(--c-amber);">↑</span>
+                                    {% elif t.status == 'rejected' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-rbg);color:var(--c-red);">✕</span>
+                                    {% elif t.status == 'pending' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-tm);">⏱</span>
+                                    {% else %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-tm);">●</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" style="text-align:center;color:var(--c-tm);padding:20px;">No tasks yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ── Projects Card ── -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2 class="card-title">📁 Recent Projects</h2>
+                        <a href="{% url 'employee_projects' %}" style="font-size:12px;color:var(--c-b5);text-decoration:none;font-weight:600;">View all →</a>
+                    </div>
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Budget</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in projects %}
+                            <tr>
+                                <td style="font-weight:600;">{{ p.title|truncatechars:26 }}</td>
+                                <td style="white-space:nowrap;font-size:12px;color:var(--c-green);font-weight:700;">₹{{ p.budget|floatformat:0 }}</td>
+                                <td>
+                                    {% if p.status == 'completed' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b0);color:var(--c-green);">✓</span>
+                                    {% elif p.status == 'assigned' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b1);color:var(--c-b8);">▶</span>
+                                    {% elif p.status == 'work_submitted' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-white)3e0;color:var(--c-amber);">↑</span>
+                                    {% elif p.status == 'closed' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-t3);">✕</span>
+                                    {% elif p.status == 'active' %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-b0);color:var(--c-green);">●</span>
+                                    {% else %}<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:800;line-height:1;flex-shrink:0;background:var(--c-page);color:var(--c-tm);">●</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" style="text-align:center;color:var(--c-tm);padding:20px;">No projects assigned yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>  <!-- close content-grid -->
+
+            <!-- ═══ LIVE ANALYTICS ═══ -->
+            <div id="empAnalyticsCard" style="background:var(--c-white);border-radius:12px;border:1px solid var(--c-bdr);overflow:hidden;margin-top:24px;margin-bottom:24px;width:100%;">
+
+                <!-- Header + Period Toggle -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px 16px;border-bottom:1px solid #f2f2f2;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h2 style="font-size:16px;font-weight:700;color:var(--c-t1);margin:0 0 2px;">Analytics Overview</h2>
+                        <p style="font-size:12px;color:var(--c-tm);margin:0;">Live data · switch period</p>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <div style="display:flex;gap:3px;background:var(--c-surf2);padding:4px;border-radius:10px;">
+                            <button class="empBtn" data-period="daily"
+                                style="padding:8px 20px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--c-t3);transition:all .2s;">Daily</button>
+                            <button class="empBtn" data-period="weekly"
+                                style="padding:8px 20px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:var(--c-b5);color:#fff;box-shadow:0 2px 8px rgba(33,150,243,.4);transition:all .2s;">Weekly</button>
+                            <button class="empBtn" data-period="monthly"
+                                style="padding:8px 20px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--c-t3);transition:all .2s;">Monthly</button>
+                        </div>
+                        <select id="yearSelect" onchange="onYearChange(this.value)"
+                            style="padding:8px 12px;border:1px solid var(--c-bdr);border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;color:var(--c-t2);background:var(--c-white);cursor:pointer;outline:none;">
+                        </select>
+                        <select id="monthSelect" onchange="onMonthChange(this.value)"
+                            style="display:none;padding:8px 12px;border:1px solid var(--c-bdr);border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;color:var(--c-t2);background:var(--c-white);cursor:pointer;outline:none;">
+                            <option value="all">All months</option>
+                            <option value="0">January</option><option value="1">February</option>
+                            <option value="2">March</option><option value="3">April</option>
+                            <option value="4">May</option><option value="5">June</option>
+                            <option value="6">July</option><option value="7">August</option>
+                            <option value="8">September</option><option value="9">October</option>
+                            <option value="10">November</option><option value="11">December</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tasks Bar Chart — full width -->
+                <div style="padding:20px 24px 4px;border-bottom:1px solid #f2f2f2;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div>
+                            <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0;">Tasks & Projects</p>
+                            <p style="font-size:11px;color:var(--c-tm);margin:2px 0 0;">New work per period</p>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <span style="background:var(--c-b1);color:var(--c-b6);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;">📋 Tasks</span>
+                            <span style="background:var(--c-white)3e0;color:var(--c-amber);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;">📁 Projects</span>
+                        </div>
+                    </div>
+                    <div style="position:relative;height:180px;width:100%;">
+                        <canvas id="empTaskChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Revenue Line Chart — full width -->
+                <div style="padding:20px 24px 4px;border-bottom:1px solid #f2f2f2;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div>
+                            <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0;">Total Revenue</p>
+                            <p style="font-size:11px;color:var(--c-tm);margin:2px 0 0;">Tasks + Projects combined</p>
+                        </div>
+                        <span style="background:var(--c-b0);color:var(--c-green);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;">💰 Revenue</span>
+                    </div>
+                    <div style="position:relative;height:180px;width:100%;">
+                        <canvas id="empRevChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Task Status Doughnut + Legend -->
+                <div style="padding:20px 24px;border-bottom:1px solid #f2f2f2;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+                    <div style="position:relative;flex-shrink:0;">
+                        <canvas id="empStatusChart" width="160" height="160" style="display:block;"></canvas>
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                            <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--c-tm);">Tasks</span>
+                        </div>
+                    </div>
+                    <div style="flex:1;min-width:180px;">
+                        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0 0 8px;">Task Status Breakdown</p>
+                        <div id="empLegend"></div>
+                    </div>
+                </div>
+
+                <!-- Project Status Doughnut -->
+                <div style="padding:20px 24px;border-top:1px solid #f2f2f2;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+                    <div style="position:relative;flex-shrink:0;">
+                        <canvas id="empProjStatusChart" width="160" height="160" style="display:block;"></canvas>
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                            <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--c-tm);">Projects</span>
+                        </div>
+                    </div>
+                    <div style="flex:1;min-width:180px;">
+                        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0 0 8px;">Project Status Breakdown</p>
+                        <div id="empProjLegend"></div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- ═══ END ANALYTICS ═══ -->
+
+            <!-- Clients Card (live from DB) -->
+            <div class="content-card" style="margin-top: 25px;">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Clients</h2>
+                    <a href="{% url 'dashboard_clients' %}" style="font-size:13px;color:var(--c-b5);text-decoration:none;">View all →</a>
+                </div>
+                <div>
+                    {% for c in recent_clients %}
+                    <div class="client-row">
+                        <div class="client-info">
+                            <div class="client-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">{{ c.profile.user.first_name|first|upper|default:"C" }}</div>
+                            <span class="client-name">{{ c.profile.user.get_full_name|default:c.profile.user.username }}</span>
+                        </div>
+                        <span class="client-desc">{{ c.company|default:"—" }}</span>
+                        <span class="client-date">{{ c.task_count }} task{{ c.task_count|pluralize }}</span>
+                        <span class="status-icon">✓</span>
+                    </div>
+                    {% empty %}
+                    <div style="color:var(--c-tm);font-size:13px;padding:12px 0;text-align:center;">No clients yet. Accept your first task to see clients here.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Chat -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function() {
+    var PERIODS = {
+        daily:   { labels: {{ daily_labels|safe }},   tasks: {{ daily_tasks|safe }},   projects: {{ daily_projects|safe }},   rev: {{ daily_rev|safe }}   },
+        weekly:  { labels: {{ weekly_labels|safe }},  tasks: {{ weekly_tasks|safe }},  projects: {{ weekly_projects|safe }},  rev: {{ weekly_rev|safe }}  },
+        monthly: { labels: {{ monthly_labels|safe }}, tasks: {{ monthly_tasks|safe }}, projects: {{ monthly_projects|safe }}, rev: {{ monthly_rev|safe }} }
+    };
+    var YEARLY      = {{ yearly_data|safe }};
+    var AVAIL_YEARS = {{ available_years|safe }};
+    var CUR_YEAR    = {{ current_year }};
+
+    var SL = {{ status_labels|safe }};
+    var SD = {{ status_data|safe }};
+    var PSL = {{ proj_status_labels|safe }};
+    var PSD = {{ proj_status_data|safe }};
+    var C  = ['#FF9800','#2196F3','#9C27B0','#4CAF50','#F44336'];
+
+    // State
+    var activePeriod = 'weekly';
+    var activeYear   = CUR_YEAR;
+    var activeMonth  = 'all';
+
+    // Chart instances — declared here so all functions share them
+    var barChart  = null;
+    var lineChart = null;
+
+    // ── Activate period button highlight ─────────────────────────────────────
+    function activateBtn(p) {
+        document.querySelectorAll('.empBtn').forEach(function(b) {
+            var on = b.dataset.period === p;
+            b.style.background = on ? '#2196F3' : 'transparent';
+            b.style.color      = on ? '#fff'    : '#555';
+            b.style.boxShadow  = on ? '0 2px 8px rgba(33,150,243,.4)' : 'none';
+        });
+    }
+
+    // ── Draw charts from labels/tasks/projects/rev ──────────────────────────
+    function drawCharts(labels, tasks, projects, rev) {
+        // Grouped bar chart: Tasks + Projects
+        var elBar = document.getElementById('empTaskChart');
+        if (elBar) {
+            if (barChart) { barChart.destroy(); barChart = null; }
+            barChart = new Chart(elBar, {
+                type: 'bar',
+                data: { labels: labels, datasets: [
+                    { label: 'Tasks', data: tasks,
+                      backgroundColor: '#2196F3', hoverBackgroundColor: '#1565C0',
+                      borderRadius: 5, borderSkipped: false },
+                    { label: 'Projects', data: projects,
+                      backgroundColor: '#FF9800', hoverBackgroundColor: '#e65100',
+                      borderRadius: 5, borderSkipped: false }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+                    plugins: {
+                        legend: { display: true, position: 'top',
+                            labels: { boxWidth: 12, font: { size: 11 }, padding: 14 } },
+                        tooltip: { callbacks: { label: function(c) {
+                            return ' ' + c.dataset.label + ': ' + c.parsed.y;
+                        } } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, maxTicksLimit: 6 }, grid: { color: '#f0f0f0' } },
+                        x: { grid: { display: false }, ticks: { maxRotation: 35, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+        // Revenue line chart (combined task + project revenue)
+        var elLine = document.getElementById('empRevChart');
+        if (elLine) {
+            if (lineChart) { lineChart.destroy(); lineChart = null; }
+            lineChart = new Chart(elLine, {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label: 'Total Revenue ₹', data: rev,
+                    borderColor: '#4CAF50', backgroundColor: 'rgba(76,175,80,.08)',
+                    fill: true, tension: 0.4,
+                    pointBackgroundColor: '#4CAF50', pointBorderColor: '#fff',
+                    pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 7 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+                    plugins: { legend: { display: false },
+                        tooltip: { callbacks: { label: function(c) {
+                            return ' ₹' + Number(c.parsed.y).toLocaleString('en-IN');
+                        } } } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f0f0f0' },
+                            ticks: { maxTicksLimit: 6, callback: function(v) {
+                                return '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v);
+                            } } },
+                        x: { grid: { display: false }, ticks: { maxRotation: 35, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+    }
+
+    // ── Period-based drawing (daily / weekly / rolling monthly) ──────────────
+    function drawPeriod(p) {
+        drawCharts(PERIODS[p].labels, PERIODS[p].tasks, PERIODS[p].projects, PERIODS[p].rev);
+    }
+
+    // ── Year/month-based drawing ──────────────────────────────────────────────
+    function drawByYearMonth() {
+        var yData = YEARLY[String(activeYear)];
+        if (!yData) return;
+        var yp = yData.projects || yData.labels.map(function(){ return 0; });
+        if (activeMonth === 'all') {
+            drawCharts(yData.labels, yData.tasks, yp, yData.rev);
+        } else {
+            var mi = parseInt(activeMonth);
+            drawCharts([yData.labels[mi]], [yData.tasks[mi]], [yp[mi]], [yData.rev[mi]]);
+        }
+    }
+
+
+    // ── Project Status Doughnut ─────────────────────────────────────────
+    function drawProjDoughnut() {
+        var el = document.getElementById('empProjStatusChart');
+        if (!el) return;
+        var total = PSD.reduce(function(a,b){return a+b;},0);
+        new Chart(el, {
+            type: 'doughnut',
+            data: { labels: PSL, datasets: [{ data: PSD,
+                backgroundColor: ['#4CAF50','#2196F3','#FF9800','#27ae60','#9E9E9E'],
+                borderWidth: 3, borderColor: '#fff', hoverOffset: 6 }] },
+            options: { responsive: false, cutout: '70%',
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: function(c) {
+                        return ' '+c.label+': '+c.raw+' ('+(total>0?Math.round(c.raw/total*100):0)+'%)';
+                    } } }
+                }
+            }
+        });
+        var leg = document.getElementById('empProjLegend');
+        if (!leg) return;
+        leg.innerHTML = '';
+        var PC = ['#4CAF50','#2196F3','#FF9800','#27ae60','#9E9E9E'];
+        PSL.forEach(function(l,i) {
+            var v = PSD[i], pct = total>0 ? Math.round(v/total*100) : 0;
+            leg.innerHTML += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f8f8f8;">'
+              + '<span style="width:12px;height:12px;border-radius:50%;background:'+PC[i]+';flex-shrink:0;"></span>'
+              + '<span style="flex:1;font-size:13px;color:var(--c-t3);">'+l+'</span>'
+              + '<span style="font-size:13px;font-weight:700;min-width:24px;text-align:right;">'+v+'</span>'
+              + '<span style="font-size:12px;color:var(--c-tm);min-width:38px;text-align:right;">'+pct+'%</span>'
+              + '</div>';
+        });
+    }
+
+    // ── Doughnut status chart ─────────────────────────────────────────────────
+    function drawDoughnut() {
+        var el = document.getElementById('empStatusChart');
+        if (!el) return;
+        var total = SD.reduce(function(a,b){return a+b;},0);
+        new Chart(el, {
+            type: 'doughnut',
+            data: { labels: SL, datasets: [{ data: SD, backgroundColor: C,
+                borderWidth: 3, borderColor: '#fff', hoverOffset: 6 }] },
+            options: { responsive: false, cutout: '70%',
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: function(c) {
+                        return ' '+c.label+': '+c.raw+' ('+(total>0?Math.round(c.raw/total*100):0)+'%)';
+                    } } } }
+            }
+        });
+        var leg = document.getElementById('empLegend');
+        if (!leg) return;
+        leg.innerHTML = '';
+        SL.forEach(function(l,i) {
+            var v = SD[i], pct = total>0 ? Math.round(v/total*100) : 0;
+            leg.innerHTML += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f8f8f8;">'
+              + '<span style="width:12px;height:12px;border-radius:50%;background:'+C[i]+';flex-shrink:0;"></span>'
+              + '<span style="flex:1;font-size:13px;color:var(--c-t3);">'+l+'</span>'
+              + '<span style="font-size:13px;font-weight:700;min-width:24px;text-align:right;">'+v+'</span>'
+              + '<span style="font-size:12px;color:var(--c-tm);min-width:38px;text-align:right;">'+pct+'%</span>'
+              + '</div>';
+        });
+    }
+
+    // ── Year change: reset month, redraw ─────────────────────────────────────
+    window.onYearChange = function(yr) {
+        activeYear  = parseInt(yr);
+        activeMonth = 'all';
+        var ms = document.getElementById('monthSelect');
+        if (ms) ms.value = 'all';
+        if (activePeriod === 'monthly') drawByYearMonth();
+    };
+
+    // ── Month change: redraw ──────────────────────────────────────────────────
+    window.onMonthChange = function(mo) {
+        activeMonth = mo;
+        if (activePeriod === 'monthly') drawByYearMonth();
+    };
+
+    // ── DOM ready ─────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Populate year dropdown
+        var selYear = document.getElementById('yearSelect');
+        if (selYear) {
+            AVAIL_YEARS.slice().reverse().forEach(function(y) {
+                var o = document.createElement('option');
+                o.value = y; o.textContent = y;
+                if (y === CUR_YEAR) o.selected = true;
+                selYear.appendChild(o);
+            });
+        }
+
+        // Period button clicks
+        document.querySelectorAll('.empBtn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                activePeriod = btn.dataset.period;
+                var ms = document.getElementById('monthSelect');
+                if (ms) ms.style.display = (activePeriod === 'monthly') ? '' : 'none';
+                activateBtn(activePeriod);
+                if (activePeriod === 'monthly') {
+                    drawByYearMonth();
+                } else {
+                    drawPeriod(activePeriod);
+                }
+            });
+        });
+
+        // Initial render
+        drawDoughnut();
+        drawProjDoughnut();
+        activateBtn('weekly');
+        drawPeriod('weekly');
+    });
+})();
+</script>
+
+    <!-- ══ JobMate AI Chatbot ══ -->
+
+    <button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">
+      🤖<div id="jmDot">1</div>
+    </button>
+
+    <div id="jmBox">
+      <div id="jmHead">
+        <div class="av">🤖</div>
+        <div class="info">
+          <div class="t">JobMate AI</div>
+          <div class="s"><span class="dot"></span>Online — Ask me anything</div>
+        </div>
+        <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+      </div>
+      <div id="jmMsgs"></div>
+      <div id="jmTyping">
+        <div class="jmAv">🤖</div>
+        <div class="jmDots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="jmChips">
+        <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+        <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+        <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+        <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+      </div>
+      <div id="jmFoot">
+        <textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea>
+        <button id="jmGo" title="Send">&#10148;</button>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var hist=[], open=false;
+
+      function hhmmss(){
+        var d=new Date();
+        return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      }
+
+      function bubble(txt, mine){
+        var msgs=document.getElementById('jmMsgs');
+        var wrap=document.createElement('div');
+        wrap.className='jmRow'+(mine?' me':'');
+        if(!mine){
+          var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);
+        }
+        var inner=document.createElement('div');
+        var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+        var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();
+        inner.appendChild(b);inner.appendChild(t);
+        wrap.appendChild(inner);
+        msgs.appendChild(wrap);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      function typing(show){
+        document.getElementById('jmTyping').style.display=show?'flex':'none';
+        if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}
+      }
+
+      window.jmOpen=function(){
+        open=!open;
+        document.getElementById('jmBox').classList.toggle('on',open);
+        document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+        if(open){
+          if(!document.getElementById('jmMsgs').children.length){
+            bubble('Hi! I am the JobMate AI assistant. I can help you find skilled employees, request tasks, track work, manage payments, and more. How can I help you today?', false);
+          }
+          setTimeout(function(){
+            var inp=document.getElementById('jmInp');
+            if(inp) inp.focus();
+          },200);
+        }
+      };
+
+      window.jmAsk=function(txt){
+        document.getElementById('jmChips').style.display='none';
+        document.getElementById('jmInp').value=txt;
+        jmSend();
+      };
+
+      function jmSend(){
+        var inp=document.getElementById('jmInp');
+        var msg=inp.value.trim();
+        if(!msg) return;
+        inp.value='';inp.style.height='';
+        document.getElementById('jmChips').style.display='none';
+        bubble(msg, true);
+        hist.push({role:'user',content:msg});
+        typing(true);
+        fetch('/chatbot/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({message:msg,history:hist.slice(-10)})
+        })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(d){
+          typing(false);
+          bubble(d.reply||'Sorry, no response.', false);
+          hist.push({role:'assistant',content:d.reply||''});
+        })
+        .catch(function(err){
+          typing(false);
+          bubble('Sorry, could not connect. Please try again.', false);
+        });
+      }
+
+      document.getElementById('jmGo').addEventListener('click', jmSend);
+
+      document.getElementById('jmInp').addEventListener('keydown', function(e){
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}
+      });
+
+      document.getElementById('jmInp').addEventListener('input', function(){
+        this.style.height='';
+        this.style.height=Math.min(this.scrollHeight,80)+'px';
+      });
+
+      // Show badge after 4s
+      setTimeout(function(){
+        if(!open){
+          var dot=document.getElementById('jmDot');
+          if(dot) dot.style.display='flex';
+        }
+      },4000);
+    })();
+    </script>
+    <!-- ══ End JobMate AI Chatbot ══ -->
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 28px;
+        right: 88px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content:''; position:absolute; inset:-4px; border-radius:50%;
+        border:2px solid rgba(144,202,249,0.45);
+        animation:stPulse 2.5s ease-in-out infinite; pointer-events:none;
+    }
+    @keyframes stPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.35);opacity:0;}}
+    </style>
+    <button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+        btn.onclick=function(){
+            window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+        };
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

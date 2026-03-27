@@ -1,0 +1,797 @@
+{% load static dict_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Projects - JobMate</title>
+    <link rel="stylesheet" href="{% static 'css/page-client-projects.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo"><span>JOB</span>MATE</div>
+    </div>
+    <div class="user-profile-mini">
+        <div class="user-info">
+            <div class="user-avatar-mini" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                {% if current_user_avatar_url %}
+                    <img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">
+                {% else %}
+                    <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-weight:700;">{{ request.user.first_name|first|default:"U" }}</span>
+                {% endif %}
+            </div>
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <span style="color:var(--c-tm);font-size:14px;">⚙️</span>
+    </div>
+    <ul class="nav-menu">
+        <li><a href="{% url 'client_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'myprofile' %}"><span class="nav-icon">👤</span> My Profile</a></li>
+        <li><a href="{% url 'works' %}"><span class="nav-icon">💼</span> Works</a></li>
+        <li><a href="{% url 'client_projects' %}" class="active"><span class="nav-icon">📁</span> Projects</a></li>
+        <li><a href="{% url 'employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+        <li><a href="{% url 'payments' %}"><span class="nav-icon">💳</span> Payments</a></li>
+            <li><a href="{% url 'bank_detail' %}"><span class="nav-icon">🏦</span> Payment Details</a></li>
+        <li><a href="{% url 'support' %}"><span class="nav-icon">⚙️</span> Support</a></li>
+        <li><a href="{% url 'notifications' %}"><span class="nav-icon">🔔</span> Notifications{% with cnt=unread_notifications %}{% if cnt %}<span class="nav-notif-badge">{% if cnt > 99 %}99+{% else %}{{ cnt }}{% endif %}</span>{% endif %}{% endwith %}</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main-content">
+
+    <div class="content-header">
+        <h1 class="page-title">📁 My Projects</h1>
+        <div class="header-actions">
+            {% include 'pages/includes/notif_icon.html' %}
+            <button class="btn-primary" onclick="openCreateModal()">➕ New Project</button>
+        </div>
+    </div>
+
+    {% for msg in messages %}
+    <div class="{% if msg.tags == 'success' %}msg-success{% else %}msg-error{% endif %}">
+        {% if msg.tags == 'success' %}✅{% else %}⚠️{% endif %} {{ msg }}
+    </div>
+    {% endfor %}
+
+    <!-- Tabs -->
+    <div class="proj-tabs">
+        <button class="proj-tab active" onclick="filterTab('all', this)">All Projects</button>
+        <button class="proj-tab" onclick="filterTab('active', this)">🟢 Active</button>
+        <button class="proj-tab" onclick="filterTab('assigned', this)">🟠 Assigned</button>
+        <button class="proj-tab" onclick="filterTab('work_submitted', this)">📎 Work Submitted</button>
+        <button class="proj-tab" onclick="filterTab('completed', this)">🏆 Completed</button>
+        <button class="proj-tab" onclick="filterTab('closed', this)">⚫ Closed</button>
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="proj-grid" id="projGrid">
+        {% for proj in projects %}
+        <div class="proj-card" data-status="{{ proj.status }}">
+
+            <!-- Top -->
+            <div class="proj-card-top">
+                <div class="proj-card-title">{{ proj.title }}</div>
+                <span class="proj-badge badge-{{ proj.status }}">{{ proj.get_status_display }}</span>
+            </div>
+
+            <!-- Description -->
+            <p class="proj-desc">{{ proj.description|truncatechars:130 }}</p>
+
+            <!-- Meta pills -->
+            <div class="proj-meta">
+                {% if proj.department %}<span class="proj-meta-pill">🏢 {{ proj.department.name }}</span>{% endif %}
+                {% if proj.skill %}<span class="proj-meta-pill">🔧 {{ proj.skill.name }}</span>{% endif %}
+                {% if proj.budget %}<span class="proj-meta-pill">💰 ₹{{ proj.budget }}</span>{% endif %}
+                {% if proj.deadline %}<span class="proj-meta-pill {{ proj.deadline|deadline_urgency }}">📅 {{ proj.deadline|smart_deadline }}</span>{% endif %}
+            </div>
+
+            <!-- Stats -->
+            <div class="proj-stats">
+                <span class="proj-stat">📋 {{ proj.applications.count }} application{{ proj.applications.count|pluralize }}</span>
+                <span class="proj-stat">🕒 {{ proj.created_at|date:"j M Y" }}</span>
+            </div>
+
+            <!-- Project Status Workflow -->
+            {% if proj.status == 'assigned' and proj.assigned_to %}
+            <div class="assigned-emp-row">
+                <div class="applicant-avatar">{{ proj.assigned_to.profile.user.first_name|first|upper }}</div>
+                <div>
+                    <div class="assigned-emp-name">✅ Assigned to {{ proj.assigned_to.profile.user.get_full_name|default:proj.assigned_to.profile.user.username }}</div>
+                    <div style="font-size:11px;color:var(--c-tm);">Waiting for employee to submit work…</div>
+                </div>
+            </div>
+
+            {% elif proj.status == 'work_submitted' and proj.assigned_to %}
+            <div style="background:var(--c-white)8e1;border-radius:10px;padding:16px;border:1px solid #ffe082;">
+                <div style="font-size:13px;font-weight:700;color:#f57f17;margin-bottom:10px;">
+                    🎉 Work Submitted by {{ proj.assigned_to.profile.user.get_full_name|default:proj.assigned_to.profile.user.username }}
+                </div>
+                {% if proj.work_note %}
+                <p style="font-size:13px;color:var(--c-t3);font-style:italic;margin-bottom:12px;border-left:3px solid #ffca28;padding-left:10px;">
+                    "{{ proj.work_note|truncatechars:150 }}"
+                </p>
+                {% endif %}
+                <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                    {% if proj.work_file %}
+                    <a href="{% url 'download_project_file' proj.id %}"
+                        style="display:inline-flex;align-items:center;gap:6px;background:var(--c-b7);
+                               color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;
+                               font-weight:700;text-decoration:none;">
+                        ⬇ Download Work File
+                    </a>
+                    {% endif %}
+                    <form method="post" id="completeProj_{{ proj.id }}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="mark_complete">
+                        <input type="hidden" name="project_id" value="{{ proj.id }}">
+                        <button type="button"
+                            onclick="confirmProjComplete('{{ proj.id }}', '{{ proj.title|escapejs }}')"
+                            style="display:inline-flex;align-items:center;gap:6px;background:#27ae60;
+                                   color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;
+                                   font-weight:700;border:none;cursor:pointer;font-family:inherit;">
+                            ✅ Mark as Complete
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% elif proj.status == 'completed' %}
+            <div style="background:var(--c-b0);border-radius:10px;padding:14px 16px;border:1px solid #a5d6a7;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:var(--c-green);margin-bottom:4px;">🏆 Project Completed</div>
+                        <div style="font-size:22px;font-weight:800;color:#1b5e20;">₹{{ proj.budget|floatformat:0 }}</div>
+                        <div style="font-size:11px;color:#6A8AAA;margin-top:2px;">Client-agreed project amount</div>
+                        <div style="font-size:12px;color:var(--c-tm);margin-top:2px;">Completed {{ proj.completed_at|date:"j M Y" }}</div>
+                        {% if proj.payment and proj.payment.status == 'paid' %}
+                        <div style="font-size:11px;margin-top:6px;display:flex;gap:10px;">
+                            <span style="color:var(--c-green);font-weight:700;">Employee: ₹{{ proj.payment.employee_payout|floatformat:0 }}</span>
+                            <span style="color:#e53935;font-weight:600;">Admin (20%): ₹{{ proj.payment.admin_commission|floatformat:0 }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if proj.payment %}
+                        {% if proj.payment.status != 'paid' %}
+                        <a href="{% url 'project_payment_gateway' proj.payment.id %}"
+                           style="display:inline-flex;align-items:center;gap:6px;background:var(--c-b5);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;align-self:flex-start;">
+                            💳 Pay Now
+                        </a>
+                        {% else %}
+                        <span style="background:#27ae60;color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;">✓ Payment Done</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Applicants list -->
+            {% with apps=proj.applications.all %}
+            {% if apps %}
+            <div class="proj-applicants">
+                <div class="proj-applicants-title">📨 Applications ({{ apps.count }})</div>
+                {% for app in apps %}
+                <div class="applicant-row">
+                    <!-- Avatar -->
+                    <div class="applicant-avatar">
+                        {% if app.employee.profile_image %}
+                            <img src="{{ app.employee.profile_image.url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        {% else %}
+                            {{ app.employee.profile.user.first_name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <!-- Info -->
+                    <div style="flex:1;min-width:0;">
+                        <div class="applicant-name">{{ app.employee.profile.user.get_full_name|default:app.employee.profile.user.username }}</div>
+                        <div style="font-size:11px;color:var(--c-tm);margin-top:2px;">
+                            {% if app.employee.title %}{{ app.employee.title }}{% endif %}
+                            {% if app.employee.department %} · {{ app.employee.department.name }}{% endif %}
+                            {% if app.employee.hourly_rate %} · ₹{{ app.employee.hourly_rate }}/hr{% endif %}
+                        </div>
+                        {% if app.message %}<div class="applicant-msg" style="margin-top:4px;">{{ app.message|truncatechars:70 }}</div>{% endif %}
+                    </div>
+                    <!-- Actions -->
+                    <div class="applicant-actions" style="flex-shrink:0;gap:6px;">
+                        {% if app.status == 'pending' %}
+                            {% if proj.status == 'active' %}
+                            <button class="btn-view-profile"
+                                onclick="showProfileModal('pmodal_{{ app.id }}')"
+                                title="View full profile">
+                                👤 Profile
+                            </button>
+                            <form method="post" style="display:inline;" id="acceptForm_{{ app.id }}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="accept_application">
+                                <input type="hidden" name="application_id" value="{{ app.id }}">
+                                <button type="button" class="btn-accept-sm"
+                                    onclick="showAcceptModal('{{ app.id }}','{{ app.employee.profile.user.get_full_name|default:app.employee.profile.user.username|escapejs }}','{{ proj.title|escapejs }}')">
+                                    ✓ Accept
+                                </button>
+                            </form>
+                            <form method="post" style="display:inline;" id="rejectForm_{{ app.id }}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject_application">
+                                <input type="hidden" name="application_id" value="{{ app.id }}">
+                                <button type="submit" class="btn-reject-sm">✕</button>
+                            </form>
+                            {% else %}
+                            <span class="applicant-rejected">Closed</span>
+                            {% endif %}
+                        {% elif app.status == 'accepted' %}
+                            <span class="applicant-accepted">✓ Accepted</span>
+                        {% else %}
+                            <span class="applicant-rejected">✕ Rejected</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Close project button -->
+            {% if proj.status == 'active' %}
+            <div style="margin-top:4px;">
+                <form method="post" onsubmit="return confirm('Close this project? It will no longer accept applications.')">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="close_project">
+                    <input type="hidden" name="project_id" value="{{ proj.id }}">
+                    <button type="submit" style="background:none;border:none;color:#e53935;font-size:12px;cursor:pointer;padding:0;font-weight:600;">🔒 Close Project</button>
+                </form>
+            </div>
+            {% endif %}
+
+        </div>
+        {% empty %}
+        <div class="empty-state" style="grid-column:1/-1;">
+            <div class="empty-state-icon">📁</div>
+            <div class="empty-state-title">No projects yet</div>
+            <div class="empty-state-sub">Create your first project to start receiving applications from employees.</div>
+            <button class="btn-primary" style="margin-top:20px;" onclick="openCreateModal()">➕ Create Project</button>
+        </div>
+        {% endfor %}
+    </div>
+
+</main>
+</div>
+
+<!-- ══ Create Project Modal ══ -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal-box">
+        <div class="modal-title">📁 Create New Project</div>
+        <form method="post" action="{% url 'client_projects' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+
+            <!-- Scrollable fields -->
+            <div class="modal-form-scroll">
+
+            <div class="form-field">
+                <label class="form-label">Project Title *</label>
+                <input type="text" name="title" class="form-input" placeholder="e.g. E-commerce Website Redesign" required maxlength="200">
+            </div>
+
+            <div class="form-field">
+                <label class="form-label">Description *</label>
+                <textarea name="description" class="form-textarea" placeholder="Describe what you need done, expected deliverables, any requirements..." required></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label class="form-label">Department</label>
+                    <select name="department" class="form-select" id="deptSelect" onchange="loadSkills(this.value)">
+                        <option value="">— Any Department —</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Skill</label>
+                    <select name="skill" class="form-select" id="skillSelect">
+                        <option value="">— Any Skill —</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label class="form-label">Project Amount (₹) <span style="font-size:11px;color:#6A8AAA;font-weight:400;">— final amount client pays</span></label>
+                    <input type="number" name="budget" class="form-input" placeholder="e.g. 25000" min="0" step="100">
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Deadline</label>
+                    <!-- Smart deadline picker -->
+                    <div class="dl-toggle-row">
+                        <button type="button" class="dl-toggle-btn active" id="dlBtnDate" onclick="setDeadlineMode('date')">📅 Date</button>
+                        <button type="button" class="dl-toggle-btn" id="dlBtnHours" onclick="setDeadlineMode('hours')">⚡ Within Hours</button>
+                    </div>
+                    <input type="hidden" name="deadline_mode" id="deadlineModeInput" value="date">
+                    <!-- Date mode -->
+                    <div id="dlDateGroup">
+                        <input type="datetime-local" name="deadline" class="form-input" id="deadlineInput"
+                               style="margin-top:6px;" title="Pick date — if today, also set the time">
+                        <div style="font-size:11px;color:#6A8AAA;margin-top:4px;">📌 If due today, set the exact time too</div>
+                    </div>
+                    <!-- Hours mode -->
+                    <div id="dlHoursGroup" style="display:none;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                            <input type="number" name="deadline_hours" id="deadlineHoursInput"
+                                   class="form-input" min="0.5" max="24" step="0.5"
+                                   placeholder="e.g. 6" style="flex:1;">
+                            <span style="font-size:13px;color:#6A8AAA;white-space:nowrap;">hours from now</span>
+                        </div>
+                        <div id="dlHoursPreview" style="font-size:12px;color:#2196F3;margin-top:5px;font-weight:600;"></div>
+                        <div style="font-size:11px;color:#6A8AAA;margin-top:3px;">Max 24 hours for express delivery</div>
+                    </div>
+                </div>
+            </div>
+
+            </div><!-- /modal-form-scroll -->
+
+            <!-- Always-visible action bar -->
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+                <button type="submit" class="btn-primary">📁 Create Project</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ══ Per-Applicant Profile Modals (server-rendered) ══ -->
+{% for proj in projects %}
+  {% if proj.status == 'active' %}
+    {% for app in proj.applications.all %}
+      {% if app.status == 'pending' %}
+      <!-- Modal for app {{ app.id }} -->
+      <div id="pmodal_{{ app.id }}" style="display:none;position:fixed;inset:0;z-index:20000;
+           background:rgba(0,0,0,.55);align-items:flex-start;justify-content:flex-end;overflow:hidden;">
+        <!-- Drawer panel -->
+        <div style="width:460px;max-width:100vw;height:100vh;background:var(--c-white);
+             display:flex;flex-direction:column;overflow:hidden;
+             box-shadow:-8px 0 40px rgba(0,0,0,.2);">
+
+          <!-- Gradient header -->
+          <div style="background:linear-gradient(135deg,#1565c0 0%,#2196F3 100%);
+               padding:22px 20px 18px;flex-shrink:0;position:relative;">
+            <button onclick="hideProfileModal('pmodal_{{ app.id }}')"
+                style="position:absolute;top:14px;right:14px;width:32px;height:32px;
+                       border-radius:50%;border:none;background:rgba(255,255,255,.25);
+                       color:#fff;font-size:17px;cursor:pointer;line-height:1;">✕</button>
+            <div style="display:flex;align-items:center;gap:14px;">
+              <!-- Avatar -->
+              <div style="width:64px;height:64px;border-radius:50%;flex-shrink:0;
+                   border:3px solid rgba(255,255,255,.5);overflow:hidden;
+                   background:rgba(255,255,255,.2);
+                   display:flex;align-items:center;justify-content:center;
+                   font-size:26px;font-weight:800;color:#fff;">
+                {% if app.employee.profile_image %}
+                  <img src="{{ app.employee.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;">
+                {% else %}
+                  {{ app.employee.profile.user.first_name|first|upper }}
+                {% endif %}
+              </div>
+              <!-- Name + meta -->
+              <div>
+                <div style="font-size:19px;font-weight:800;color:#fff;line-height:1.2;">
+                  {{ app.employee.profile.user.get_full_name|default:app.employee.profile.user.username }}
+                </div>
+                {% if app.employee.title %}
+                <div style="font-size:13px;color:rgba(255,255,255,.82);margin-top:3px;">{{ app.employee.title }}</div>
+                {% endif %}
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;">
+                  {% if app.employee.department %}
+                  <span style="background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:11px;color:#fff;font-weight:600;">
+                    🏢 {{ app.employee.department.name }}
+                  </span>
+                  {% endif %}
+                  {% if app.employee.skill %}
+                  <span style="background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:11px;color:#fff;font-weight:600;">
+                    🔧 {{ app.employee.skill.name }}
+                  </span>
+                  {% endif %}
+                  {% if app.employee.hourly_rate %}
+                  <span style="background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:11px;color:#fff;font-weight:600;">
+                    💰 ₹{{ app.employee.hourly_rate }}/hr
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scrollable body -->
+          <div style="flex:1;overflow-y:auto;padding:20px 22px;">
+
+            <!-- Cover message -->
+            {% if app.message %}
+            <div style="margin-bottom:18px;">
+              <div style="font-size:11px;font-weight:700;color:var(--c-tm);text-transform:uppercase;
+                   letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--c-surf2);">
+                💬 Application Message
+              </div>
+              <div style="background:var(--c-b1);border-radius:10px;padding:13px 15px;
+                   font-size:13px;color:var(--c-t1);line-height:1.7;font-style:italic;">
+                {{ app.message }}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Bio -->
+            {% if app.employee.bio %}
+            <div style="margin-bottom:18px;">
+              <div style="font-size:11px;font-weight:700;color:var(--c-tm);text-transform:uppercase;
+                   letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--c-surf2);">
+                👤 About
+              </div>
+              <p style="font-size:13px;color:var(--c-t3);line-height:1.7;margin:0;">{{ app.employee.bio|truncatechars:400 }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Portfolio -->
+            {% with ptf=app.employee.portfolio_items.all %}
+            {% if ptf %}
+            <div style="margin-bottom:18px;">
+              <div style="font-size:11px;font-weight:700;color:var(--c-tm);text-transform:uppercase;
+                   letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--c-surf2);">
+                🗂 Portfolio ({{ ptf.count }})
+              </div>
+              {% for p in ptf %}
+              <div style="background:var(--c-page);border-radius:8px;padding:10px 14px;
+                   margin-bottom:7px;border-left:3px solid #2196F3;">
+                <div style="font-size:13px;font-weight:700;color:var(--c-t1);">{{ p.title }}</div>
+                {% if p.description %}<div style="font-size:12px;color:var(--c-tm);margin-top:3px;">{{ p.description|truncatechars:100 }}</div>{% endif %}
+                {% if p.link %}<a href="{{ p.link }}" target="_blank" style="font-size:11px;color:var(--c-b5);margin-top:4px;display:block;">🔗 View project →</a>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Accreditations -->
+            {% with accs=app.employee.accreditations.all %}
+            {% if accs %}
+            <div style="margin-bottom:18px;">
+              <div style="font-size:11px;font-weight:700;color:var(--c-tm);text-transform:uppercase;
+                   letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--c-surf2);">
+                🎓 Accreditations
+              </div>
+              <div>
+              {% for a in accs %}
+                <span style="display:inline-flex;align-items:center;gap:5px;
+                     background:var(--c-white)8e1;border:1px solid #ffe082;border-radius:20px;
+                     padding:4px 11px;font-size:12px;font-weight:600;color:#795548;
+                     margin:0 5px 5px 0;">
+                  🎓 {{ a.title }}{% if a.issuer %} <span style="font-weight:400;color:var(--c-tm);">· {{ a.issuer }}</span>{% endif %}
+                </span>
+              {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Testimonials -->
+            {% with tsts=app.employee.testimonials.all %}
+            {% if tsts %}
+            <div style="margin-bottom:18px;">
+              <div style="font-size:11px;font-weight:700;color:var(--c-tm);text-transform:uppercase;
+                   letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--c-surf2);">
+                ⭐ Testimonials
+              </div>
+              {% for t in tsts %}
+              <div style="background:var(--c-white)de7;border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+                <div style="font-size:11px;font-weight:700;color:var(--c-tm);margin-bottom:4px;">{{ t.author_name }}</div>
+                <p style="font-size:13px;font-style:italic;color:var(--c-t3);margin:0 0 6px;line-height:1.5;">{{ t.text|truncatechars:150 }}</p>
+                <div>
+                  {% for i in "12345" %}{% if forloop.counter <= t.rating %}<span style="color:#ffc107;">★</span>{% else %}<span style="color:#e0e0e0;">★</span>{% endif %}{% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Full profile link -->
+            <div style="text-align:center;padding:8px 0;">
+              <a href="/empprofile/{{ app.employee.id }}/" target="_blank"
+                 style="font-size:12px;color:var(--c-b5);text-decoration:none;">
+                🔗 Open full profile page →
+              </a>
+            </div>
+
+          </div><!-- /body -->
+
+          <!-- Footer buttons -->
+          <div style="padding:14px 18px;border-top:1px solid #f0f0f0;background:var(--c-page);
+               display:flex;gap:10px;flex-shrink:0;">
+            <button onclick="hideProfileModal('pmodal_{{ app.id }}')"
+                style="padding:11px 16px;border-radius:8px;border:1.5px solid #ddd;
+                       background:var(--c-white);color:var(--c-t3);font-size:13px;font-weight:600;cursor:pointer;">
+              ← Back
+            </button>
+            <button onclick="hideProfileModal('pmodal_{{ app.id }}'); document.getElementById('rejectForm_{{ app.id }}').submit();"
+                style="padding:11px 14px;border-radius:8px;border:1.5px solid #e53935;
+                       background:var(--c-white);color:#e53935;font-size:13px;font-weight:700;cursor:pointer;">
+              ✕ Reject
+            </button>
+            <button onclick="hideProfileModal('pmodal_{{ app.id }}'); showAcceptModal('{{ app.id }}','{{ app.employee.profile.user.get_full_name|default:app.employee.profile.user.username|escapejs }}','{{ proj.title|escapejs }}');"
+                style="flex:1;padding:11px;border-radius:8px;border:none;
+                       background:#27ae60;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
+              ✓ Accept This Employee
+            </button>
+          </div>
+
+        </div><!-- /drawer panel -->
+      </div><!-- /modal pmodal_{{ app.id }} -->
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endfor %}
+
+<!-- ══ Accept Confirmation Modal ══ -->
+<div id="acceptConfirmModal" style="display:none;position:fixed;inset:0;z-index:30000;
+     background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+  <div style="background:var(--c-white);border-radius:16px;width:100%;max-width:420px;margin:20px;
+       padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.22);text-align:center;">
+    <div style="font-size:48px;margin-bottom:14px;">✅</div>
+    <h2 style="font-size:20px;font-weight:700;color:var(--c-t1);margin:0 0 8px;">Accept this applicant?</h2>
+    <p id="acceptConfirmMsg" style="font-size:14px;color:var(--c-tm);margin:0 0 14px;line-height:1.6;"></p>
+    <div style="background:var(--c-b0);border-radius:8px;padding:12px 14px;
+         font-size:13px;color:var(--c-green);margin-bottom:22px;line-height:1.6;">
+      ✔ All other applicants will be automatically rejected.<br>
+      The employee will be notified immediately.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="closeAcceptModal()"
+          style="padding:10px 24px;border-radius:8px;border:none;
+                 background:var(--c-surf2);color:var(--c-t3);font-size:14px;font-weight:600;cursor:pointer;">
+        Cancel
+      </button>
+      <button id="acceptConfirmBtn" onclick="submitAccept()"
+          style="padding:10px 24px;border-radius:8px;border:none;
+                 background:#27ae60;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+        ✓ Yes, Accept
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-view-profile {
+    background:var(--c-b1);color:var(--c-b8);border:1.5px solid #90caf9;
+    border-radius:6px;padding:5px 11px;font-size:11px;font-weight:700;
+    cursor:pointer;white-space:nowrap;transition:all .15s;
+}
+.btn-view-profile:hover { background:#bbdefb; border-color:var(--c-b5); }
+@keyframes cModalIn {
+  from { opacity:0; transform:translateY(-12px) scale(.97); }
+  to   { opacity:1; transform:none; }
+}
+</style>
+
+<script>
+/* ── Profile modal helpers ── */
+function showProfileModal(id) {
+    var el = document.getElementById(id);
+    if (!el) { console.error('Modal not found:', id); return; }
+    el.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function hideProfileModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+/* ── Accept confirm modal ── */
+var _pendingAcceptId = null;
+function showAcceptModal(appId, empName, projTitle) {
+    _pendingAcceptId = appId;
+    document.getElementById('acceptConfirmMsg').textContent =
+        'You are accepting ' + empName + ' for "' + projTitle + '".';
+    document.getElementById('acceptConfirmModal').style.display = 'flex';
+}
+function closeAcceptModal() {
+    document.getElementById('acceptConfirmModal').style.display = 'none';
+    _pendingAcceptId = null;
+}
+function submitAccept() {
+    if (!_pendingAcceptId) return;
+    var form = document.getElementById('acceptForm_' + _pendingAcceptId);
+    if (form) {
+        var btn = document.getElementById('acceptConfirmBtn');
+        btn.textContent = '⏳ Processing…';
+        btn.disabled = true;
+        form.submit();
+    } else { closeAcceptModal(); }
+}
+document.getElementById('acceptConfirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAcceptModal();
+});
+/* close on Escape */
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('[id^="pmodal_"]').forEach(function(m){ m.style.display='none'; });
+        document.body.style.overflow = '';
+        closeAcceptModal();
+    }
+});
+</script>
+
+<!-- ══ Project Complete Confirmation Modal ══ -->
+<div id="projCompleteModal" style="display:none;position:fixed;inset:0;z-index:10000;
+    background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
+    <div style="background:var(--c-white);border-radius:16px;width:100%;max-width:420px;margin:20px;
+        padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:cModalIn .22s ease;">
+        <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:48px;line-height:1;">🏆</div>
+            <h2 style="font-size:20px;font-weight:700;color:var(--c-t1);margin:12px 0 6px;">Mark Project as Complete?</h2>
+            <p id="projCompleteMsg" style="font-size:14px;color:var(--c-tm);margin:0;line-height:1.5;"></p>
+        </div>
+        <p style="font-size:13px;color:var(--c-tm);background:var(--c-page);border-radius:8px;padding:12px 14px;margin-bottom:20px;line-height:1.6;">
+            ✔ This will mark the project as <strong>Completed</strong> and create a payment record for the employee.<br>
+            This action cannot be undone.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <button onclick="closeProjCompleteModal()"
+                style="padding:10px 22px;border-radius:8px;border:none;background:var(--c-surf2);
+                       color:var(--c-t3);font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+            <button id="projCompleteConfirmBtn" onclick="submitProjComplete()"
+                style="padding:10px 22px;border-radius:8px;border:none;background:#27ae60;
+                       color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+                ✅ Yes, Mark Complete
+            </button>
+        </div>
+    </div>
+</div>
+<style>@keyframes cModalIn{from{opacity:0;transform:translateY(-16px) scale(.96);}to{opacity:1;transform:none;}}</style>
+<script>
+var _pendingProjId = null;
+function confirmProjComplete(projId, projTitle) {
+    _pendingProjId = projId;
+    document.getElementById('projCompleteMsg').textContent =
+        'You are about to complete "' + projTitle + '".';
+    document.getElementById('projCompleteModal').style.display = 'flex';
+}
+function closeProjCompleteModal() {
+    document.getElementById('projCompleteModal').style.display = 'none';
+    _pendingProjId = null;
+}
+function submitProjComplete() {
+    if (!_pendingProjId) return;
+    var form = document.getElementById('completeProj_' + _pendingProjId);
+    if (form) {
+        var btn = document.getElementById('projCompleteConfirmBtn');
+        btn.textContent = '⏳ Processing…'; btn.disabled = true;
+        form.submit();
+    } else { closeProjCompleteModal(); }
+}
+document.getElementById('projCompleteModal').addEventListener('click', function(e){
+    if (e.target === this) closeProjCompleteModal();
+});
+</script>
+
+<!-- ══ Chatbot ══ -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">🤖<div id="jmDot">1</div></button>
+<div id="jmBox">
+  <div id="jmHead"><div class="av">🤖</div><div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online</div></div><button id="jmX" onclick="jmOpen()">✕</button></div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips"><button class="jmC" onclick="jmAsk('How do projects work?')">How projects work</button><button class="jmC" onclick="jmAsk('How do I accept an application?')">Accept application</button></div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo">&#10148;</button></div>
+</div>
+<script>
+(function(){
+  var hist=[],open=false;
+  function ts(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function bubble(txt,mine){var msgs=document.getElementById('jmMsgs');var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}var inner=document.createElement('div');var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;var t=document.createElement('div');t.className='jmT';t.textContent=ts();inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;}
+  function typing(s){document.getElementById('jmTyping').style.display=s?'flex':'none';}
+  window.jmOpen=function(){open=!open;document.getElementById('jmBox').classList.toggle('on',open);document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">1</div>';if(open&&!document.getElementById('jmMsgs').children.length)bubble('Hi! Ask me anything about managing your projects.',false);};
+  window.jmAsk=function(txt){document.getElementById('jmInp').value=txt;jmSend();};
+  function jmSend(){var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;inp.value='';bubble(msg,true);hist.push({role:'user',content:msg});typing(true);fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})}).then(function(r){return r.json();}).then(function(d){typing(false);bubble(d.reply||'No response.',false);hist.push({role:'assistant',content:d.reply||''});}).catch(function(){typing(false);bubble('Sorry, could not connect.',false);});}
+  document.getElementById('jmGo').addEventListener('click',jmSend);
+  document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});
+  document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});
+})();
+</script>
+
+<!-- ══ Scroll button ══ -->
+<button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</button>
+<script>(function(){var b=document.getElementById('scrollTopBtn');if(b)b.classList.add('visible');})();</script>
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+<script>
+// ── Modal ──────────────────────────────────────────────
+function openCreateModal() {
+    document.getElementById('createModal').classList.add('open');
+    // Set min to now for datetime-local
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('deadlineInput').min = now.toISOString().slice(0,16);
+}
+function closeCreateModal() {
+    document.getElementById('createModal').classList.remove('open');
+}
+document.getElementById('createModal').addEventListener('click', function(e){
+    if (e.target === this) closeCreateModal();
+});
+
+// ── Smart Deadline Picker ──────────────────────────────
+function setDeadlineMode(mode) {
+    document.getElementById('deadlineModeInput').value = mode;
+    var btnDate  = document.getElementById('dlBtnDate');
+    var btnHours = document.getElementById('dlBtnHours');
+    var grpDate  = document.getElementById('dlDateGroup');
+    var grpHours = document.getElementById('dlHoursGroup');
+
+    if (mode === 'hours') {
+        btnDate.classList.remove('active');
+        btnHours.classList.add('active');
+        grpDate.style.display  = 'none';
+        grpHours.style.display = 'block';
+        // Clear date input so it won't be submitted
+        document.getElementById('deadlineInput').value = '';
+    } else {
+        btnDate.classList.add('active');
+        btnHours.classList.remove('active');
+        grpDate.style.display  = 'block';
+        grpHours.style.display = 'none';
+        // Clear hours input
+        document.getElementById('deadlineHoursInput').value = '';
+        document.getElementById('dlHoursPreview').textContent = '';
+    }
+}
+
+// Live preview for hours mode
+document.getElementById('deadlineHoursInput').addEventListener('input', function() {
+    var h = parseFloat(this.value);
+    var preview = document.getElementById('dlHoursPreview');
+    if (!h || h <= 0) { preview.textContent = ''; return; }
+    var d = new Date(Date.now() + h * 3600 * 1000);
+    var opts = {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'};
+    preview.textContent = '⏰ Due: ' + d.toLocaleString('en-IN', opts);
+});
+
+// ── Skills AJAX ────────────────────────────────────────
+function loadSkills(deptId) {
+    var sel = document.getElementById('skillSelect');
+    sel.innerHTML = '<option value="">— Any Skill —</option>';
+    if (!deptId) return;
+    fetch('/api/skills-for-dept/?dept_id=' + deptId)
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            d.skills.forEach(function(s){
+                var opt = document.createElement('option');
+                opt.value = s.id; opt.textContent = s.name;
+                sel.appendChild(opt);
+            });
+        });
+}
+
+// ── Tab filter ─────────────────────────────────────────
+function filterTab(status, btn) {
+    document.querySelectorAll('.proj-tab').forEach(function(t){ t.classList.remove('active'); });
+    btn.classList.add('active');
+    document.querySelectorAll('.proj-card').forEach(function(c){
+        c.style.display = (status === 'all' || c.dataset.status === status) ? '' : 'none';
+    });
+}
+</script>
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

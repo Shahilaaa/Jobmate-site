@@ -1,0 +1,491 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ emp.profile.user.get_full_name|default:emp.profile.user.username }} — Revenue — JobMate Admin</title>
+    <link rel="stylesheet" href="{% static 'css/page-admin-employee-revenue.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span>JOB</span>MATE</div>
+        </div>
+        <div class="user-profile">
+            <div class="user-info">
+                <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">
+                    {% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">{% else %}{{ current_user_initials }}{% endif %}
+                </div>
+                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+            <span style="color:var(--c-tm);font-size:16px;">⚙️</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'dashboard_admin_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="{% url 'dashboard_admin_employee' %}"><span class="nav-icon">👥</span> Employees</a></li>
+            <li><a href="{% url 'dashboard_admin_clients' %}"><span class="nav-icon">👤</span> Clients</a></li>
+            <li><a href="{% url 'dashboard_admin_revenue' %}" class="active"><span class="nav-icon">💰</span> Revenue</a></li>
+            <li><a href="{% url 'dashboard_admin_departments' %}"><span class="nav-icon">🏷️</span> Departments</a></li>
+                <li><a href="{% url 'dashboard_admin_support' %}"><span class="nav-icon">🎫</span> Support Tickets</a></li>
+            <li><a href="{% url 'admin_bank_accounts' %}"><span class="nav-icon">🏦</span> Bank Accounts</a></li>
+            <li><a href="{% url 'dashboard_admin_settings' %}"><span class="nav-icon">⚙️</span> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Top bar -->
+        <div class="rev-topbar">
+            <div>
+                <a href="{% url 'dashboard_admin_revenue' %}" class="rev-back">← Back to All Revenue</a>
+                <h1 class="rev-page-title">Employee Revenue Detail</h1>
+            </div>
+{% include 'pages/includes/notif_icon.html' %}
+        </div>
+
+        <!-- Employee Selector -->
+        <div class="rev-selector">
+            <span class="rev-selector-label">👤 View Revenue For:</span>
+            <form method="get" action="" style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;">
+                <select name="emp_id" onchange="this.form.submit()" class="rev-selector-select">
+                    {% for e in all_employees %}
+                    <option value="{{ e.id }}" {% if e.id == emp.id %}selected{% endif %}>
+                        {{ e.profile.user.get_full_name|default:e.profile.user.username }}{% if e.title %} — {{ e.title }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="rev-btn-primary">View</button>
+            </form>
+        </div>
+
+        <!-- Profile Hero -->
+        <div class="rev-hero">
+            <div class="rev-hero-avatar">
+                {% if emp.profile_image %}
+                    <img src="{{ emp.profile_image.url }}" alt="avatar">
+                {% else %}
+                    {{ emp.profile.user.first_name|first|upper|default:"E" }}
+                {% endif %}
+            </div>
+            <div class="rev-hero-info">
+                <h2 class="rev-hero-name">{{ emp.profile.user.get_full_name|default:emp.profile.user.username }}</h2>
+                <div class="rev-tags">
+                    {% if emp.title %}<span class="rev-tag blue">{{ emp.title }}</span>{% endif %}
+                    {% if emp.department %}<span class="rev-tag purple">{{ emp.department.name }}</span>{% endif %}
+                    {% if emp.skill %}<span class="rev-tag teal">{{ emp.skill.name }}</span>{% endif %}
+                    {% if emp.is_available %}<span class="rev-tag green">✓ Available</span>{% else %}<span class="rev-tag red">✗ Unavailable</span>{% endif %}
+                </div>
+                <p class="rev-hero-contact">{{ emp.profile.user.email }} &nbsp;·&nbsp; ₹{{ emp.hourly_rate }}/hr</p>
+            </div>
+            <div class="rev-hero-earned">
+                <div class="rev-hero-earned-label">Total Earned</div>
+                <div class="rev-hero-earned-val">₹{{ total_revenue|floatformat:0 }}</div>
+                <div class="rev-hero-earned-sub">{{ completed }} completed task{{ completed|pluralize }}</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                    <span style="background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:12px;color:#fff;">
+                        💼 Tasks: ₹{{ task_revenue|floatformat:0 }}
+                    </span>
+                    <span style="background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:12px;color:#fff;">
+                        📁 Projects: ₹{{ proj_revenue|floatformat:0 }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="rev-stats">
+            <div class="rev-stat">
+                <div class="rev-stat-icon" style="background:var(--c-b0);color:var(--c-green);">💰</div>
+                <div>
+                    <div class="rev-stat-val" style="color:var(--c-green);">₹{{ total_revenue|floatformat:0 }}</div>
+                    <div class="rev-stat-lbl">Total Revenue</div>
+                    <div style="font-size:11px;color:var(--c-tm);margin-top:2px;">Tasks ₹{{ task_revenue|floatformat:0 }} + Projects ₹{{ proj_revenue|floatformat:0 }}</div>
+                </div>
+            </div>
+            <div class="rev-stat">
+                <div class="rev-stat-icon" style="background:var(--c-b1);color:var(--c-b5);">✅</div>
+                <div>
+                    <div class="rev-stat-val" style="color:var(--c-b5);">{{ completed }}</div>
+                    <div class="rev-stat-lbl">Completed Tasks</div>
+                </div>
+            </div>
+            <div class="rev-stat">
+                <div class="rev-stat-icon" style="background:#ede7f6;color:#7e57c2;">⚡</div>
+                <div>
+                    <div class="rev-stat-val" style="color:#7e57c2;">{{ active }}</div>
+                    <div class="rev-stat-lbl">Active Tasks</div>
+                </div>
+            </div>
+            <div class="rev-stat">
+                <div class="rev-stat-icon" style="background:var(--c-white)3e0;color:#FF9800;">⏳</div>
+                <div>
+                    <div class="rev-stat-val" style="color:#FF9800;">{{ pending }}</div>
+                    <div class="rev-stat-lbl">Pending Tasks</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Panel -->
+        <div class="rev-analytics">
+
+            <div class="rev-analytics-header">
+                <div>
+                    <h3 class="rev-analytics-title">Revenue &amp; Task Analytics</h3>
+                    <p class="rev-analytics-sub">Live data · {{ emp.profile.user.get_full_name|default:emp.profile.user.username }}</p>
+                </div>
+                <div class="rev-period-controls">
+                    <div class="rev-period-tabs">
+                        <button class="rev-ptab" data-period="daily">Daily</button>
+                        <button class="rev-ptab active" data-period="weekly">Weekly</button>
+                        <button class="rev-ptab" data-period="monthly">Monthly</button>
+                    </div>
+                    <select id="yearSelect" onchange="onYearChange(this.value)" class="rev-mini-select"></select>
+                    <select id="monthSelect" onchange="onMonthChange(this.value)" class="rev-mini-select" style="display:none;">
+                        <option value="all">All months</option>
+                        <option value="0">January</option><option value="1">February</option>
+                        <option value="2">March</option><option value="3">April</option>
+                        <option value="4">May</option><option value="5">June</option>
+                        <option value="6">July</option><option value="7">August</option>
+                        <option value="8">September</option><option value="9">October</option>
+                        <option value="10">November</option><option value="11">December</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="rev-charts-grid">
+                <div class="rev-chart-box">
+                    <div class="rev-chart-head">
+                        <div>
+                            <div class="rev-chart-title">Tasks Created</div>
+                            <div class="rev-chart-sub">per period</div>
+                        </div>
+                        <span class="rev-chip blue">📋 Tasks</span>
+                    </div>
+                    <div class="rev-canvas-wrap"><canvas id="admEmpTaskChart"></canvas></div>
+                </div>
+                <div class="rev-chart-box">
+                    <div class="rev-chart-head">
+                        <div>
+                            <div class="rev-chart-title">Revenue Earned</div>
+                            <div class="rev-chart-sub">₹ per period</div>
+                        </div>
+                        <span class="rev-chip green">💰 Revenue</span>
+                    </div>
+                    <div class="rev-canvas-wrap"><canvas id="admEmpRevChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="rev-donut-section">
+                <div class="rev-donut-wrap">
+                    <canvas id="admEmpStatusChart" width="180" height="180"></canvas>
+                    <div class="rev-donut-label">Status</div>
+                </div>
+                <div class="rev-donut-legend">
+                    <p class="rev-legend-title">Task Status Breakdown</p>
+                    <div id="admEmpLegend"></div>
+                </div>
+            </div>
+
+        </div>
+
+    <!-- ── Project Status Chart ── -->
+        <div style="background:var(--c-white);border-radius:14px;border:1px solid var(--c-bdr);padding:24px 28px;margin:0 28px 24px;">
+            <div style="font-size:15px;font-weight:700;color:var(--c-t1);margin-bottom:18px;">📊 Project Analytics</div>
+            <div style="display:flex;align-items:flex-start;gap:40px;flex-wrap:wrap;">
+
+                <!-- Project Status Doughnut -->
+                <div style="display:flex;align-items:center;gap:24px;flex:1;min-width:260px;">
+                    <div style="position:relative;flex-shrink:0;">
+                        <canvas id="admEmpProjStatusChart" width="160" height="160" style="display:block;"></canvas>
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                            <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--c-tm);">Projects</span>
+                        </div>
+                    </div>
+                    <div style="flex:1;">
+                        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0 0 8px;">Project Status</p>
+                        <div id="admEmpProjLegend"></div>
+                    </div>
+                </div>
+
+                <!-- Project Revenue Bar Chart -->
+                <div style="flex:2;min-width:300px;">
+                    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--c-tm);margin:0 0 8px;">Project Revenue Over Time</p>
+                    <div style="position:relative;height:180px;width:100%;">
+                        <canvas id="admEmpProjRevChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    <!-- ── Project Revenue Details ── -->
+        <div style="background:var(--c-white);border-radius:14px;border:1px solid var(--c-bdr);padding:24px 28px;margin:0 28px 28px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <div style="font-size:15px;font-weight:700;color:var(--c-t1);">📁 Project Revenue Details</div>
+                    <div style="font-size:12px;color:var(--c-tm);margin-top:3px;">Completed projects · {{ emp.profile.user.get_full_name|default:emp.profile.user.username }}</div>
+                </div>
+                <div style="background:var(--c-b0);border-radius:10px;padding:10px 22px;text-align:center;">
+                    <div style="font-size:10px;font-weight:700;color:var(--c-tm);text-transform:uppercase;letter-spacing:.5px;">Project Revenue</div>
+                    <div style="font-size:24px;font-weight:800;color:var(--c-green);line-height:1.1;">₹{{ proj_revenue|floatformat:0 }}</div>
+                </div>
+            </div>
+            {% if completed_projects %}
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:2px solid #f0f0f0;">
+                        <th style="text-align:left;padding:10px 14px;color:var(--c-tm);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Project</th>
+                        <th style="text-align:left;padding:10px 14px;color:var(--c-tm);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Client</th>
+                        <th style="text-align:left;padding:10px 14px;color:var(--c-tm);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Amount Earned</th>
+                        <th style="text-align:left;padding:10px 14px;color:var(--c-tm);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Completed On</th>
+                        <th style="text-align:left;padding:10px 14px;color:var(--c-tm);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proj in completed_projects %}
+                    <tr style="border-bottom:1px solid #f9f9f9;">
+                        <td style="padding:12px 14px;font-weight:700;color:var(--c-t1);">{{ proj.title|truncatechars:40 }}</td>
+                        <td style="padding:12px 14px;">
+                            <div style="display:flex;align-items:center;gap:9px;">
+                                <div style="width:30px;height:30px;border-radius:50%;background:var(--c-b1);color:var(--c-b8);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">
+                                    {{ proj.client.profile.user.first_name|first|upper }}
+                                </div>
+                                <span style="color:var(--c-t3);">{{ proj.client.profile.user.get_full_name|default:proj.client.profile.user.username }}</span>
+                            </div>
+                        </td>
+                        <td style="padding:12px 14px;font-weight:800;color:var(--c-green);font-size:16px;">
+                            {% if proj.payment %}₹{{ proj.payment.amount|floatformat:0 }}{% else %}₹{{ proj.budget|floatformat:0 }}{% endif %}
+                        </td>
+                        <td style="padding:12px 14px;color:var(--c-tm);font-size:12px;">{{ proj.completed_at|date:"j M Y"|default:"—" }}</td>
+                        <td style="padding:12px 14px;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--c-b0);color:var(--c-green);font-size:13px;font-weight:800;">✓</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align:center;padding:32px;color:var(--c-tm);">
+                <div style="font-size:36px;margin-bottom:10px;">📁</div>
+                <div style="font-size:14px;font-weight:600;color:var(--c-tm);">No completed projects yet for this employee.</div>
+                <div style="font-size:12px;color:#ddd;margin-top:4px;">Project revenue will appear here once projects are completed.</div>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+    var PERIODS={daily:{labels:{{ daily_labels|safe }},tasks:{{ daily_tasks|safe }},projects:{{ daily_projects|safe }},rev:{{ daily_rev|safe }}},weekly:{labels:{{ weekly_labels|safe }},tasks:{{ weekly_tasks|safe }},projects:{{ weekly_projects|safe }},rev:{{ weekly_rev|safe }}},monthly:{labels:{{ monthly_labels|safe }},tasks:{{ monthly_tasks|safe }},projects:{{ monthly_projects|safe }},rev:{{ monthly_rev|safe }}}};
+    var YEARLY={{ yearly_data|safe }},AVAIL_YEARS={{ available_years|safe }},CUR_YEAR={{ current_year }};
+    var SL={{ status_labels|safe }},SD={{ status_data|safe }},C=['#FF9800','#2196F3','#9C27B0','#4CAF50','#F44336'];
+    var PSL={{ proj_status_labels|safe }},PSD={{ proj_status_data|safe }};
+    var activePeriod='weekly',activeYear=CUR_YEAR,activeMonth='all',barChart=null,lineChart=null;
+
+    function activateTab(p){document.querySelectorAll('.rev-ptab').forEach(function(b){b.classList.toggle('active',b.dataset.period===p)});}
+
+    function drawCharts(labels,tasks,rev){
+        var elBar=document.getElementById('admEmpTaskChart');
+        if(elBar){if(barChart){barChart.destroy();barChart=null;}
+        barChart=new Chart(elBar,{type:'bar',data:{labels:labels,datasets:[{label:'Tasks',data:tasks,backgroundColor:'rgba(33,150,243,0.85)',hoverBackgroundColor:'#1565C0',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+c.parsed.y+' task'+(c.parsed.y!==1?'s':'')}}}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,precision:0,maxTicksLimit:6},grid:{color:'#f5f5f5'}},x:{grid:{display:false},ticks:{maxRotation:35,font:{size:11}}}}}})}
+        var elLine=document.getElementById('admEmpRevChart');
+        if(elLine){if(lineChart){lineChart.destroy();lineChart=null;}
+        lineChart=new Chart(elLine,{type:'line',data:{labels:labels,datasets:[{label:'Revenue ₹',data:rev,borderColor:'#4CAF50',backgroundColor:'rgba(76,175,80,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#4CAF50',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,pointHoverRadius:7}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' ₹'+Number(c.parsed.y).toLocaleString('en-IN')}}}},scales:{y:{beginAtZero:true,grid:{color:'#f5f5f5'},ticks:{maxTicksLimit:6,callback:function(v){return '₹'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}},x:{grid:{display:false},ticks:{maxRotation:35,font:{size:11}}}}}})}
+    }
+
+    function drawDoughnut(){
+        var el=document.getElementById('admEmpStatusChart');if(!el)return;
+        var total=SD.reduce(function(a,b){return a+b;},0);
+        new Chart(el,{type:'doughnut',data:{labels:SL,datasets:[{data:SD,backgroundColor:C,borderWidth:3,borderColor:'#fff',hoverOffset:6}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+c.raw+' ('+(total>0?Math.round(c.raw/total*100):0)+'%)'}}}}}});
+        var leg=document.getElementById('admEmpLegend');if(!leg)return;leg.innerHTML='';
+        SL.forEach(function(l,i){var v=SD[i],pct=total>0?Math.round(v/total*100):0;
+        leg.innerHTML+='<div class="rev-leg-row"><span class="rev-leg-dot" style="background:'+C[i]+'"></span><span class="rev-leg-name">'+l+'</span><span class="rev-leg-val">'+v+'</span><span class="rev-leg-pct">'+pct+'%</span></div>';});
+    }
+
+    window.onYearChange=function(yr){activeYear=parseInt(yr);activeMonth='all';var ms=document.getElementById('monthSelect');if(ms)ms.value='all';if(activePeriod==='monthly')drawByYearMonth();};
+    window.onMonthChange=function(mo){activeMonth=mo;if(activePeriod==='monthly')drawByYearMonth();};
+    function drawByYearMonth(){var yData=YEARLY[String(activeYear)];if(!yData)return;if(activeMonth==='all'){drawCharts(yData.labels,yData.tasks,yData.rev);}else{var mi=parseInt(activeMonth);drawCharts([yData.labels[mi]],[yData.tasks[mi]],[yData.rev[mi]]);}}
+
+
+
+    // ── Project Status Doughnut ─────────────────────────────────────────
+    function drawProjDoughnut() {
+        var el = document.getElementById('admEmpProjStatusChart');
+        if (!el) return;
+        var total = PSD.reduce(function(a,b){return a+b;},0);
+        new Chart(el, {
+            type: 'doughnut',
+            data: { labels: PSL, datasets: [{ data: PSD,
+                backgroundColor: ['#4CAF50','#2196F3','#FF9800','#27ae60','#9E9E9E'],
+                borderWidth: 3, borderColor: '#fff', hoverOffset: 6 }] },
+            options: { responsive: false, cutout: '70%',
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: function(c) {
+                        return ' '+c.label+': '+c.raw+' ('+(total>0?Math.round(c.raw/total*100):0)+'%)';
+                    } } }
+                }
+            }
+        });
+        var leg = document.getElementById('admEmpProjLegend');
+        if (!leg) return;
+        leg.innerHTML = '';
+        var PC = ['#4CAF50','#2196F3','#FF9800','#27ae60','#9E9E9E'];
+        PSL.forEach(function(l,i) {
+            var v = PSD[i], pct = total>0 ? Math.round(v/total*100) : 0;
+            leg.innerHTML += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f8f8f8;">'
+              + '<span style="width:12px;height:12px;border-radius:50%;background:'+PC[i]+';flex-shrink:0;"></span>'
+              + '<span style="flex:1;font-size:13px;color:var(--c-t3);">'+l+'</span>'
+              + '<span style="font-size:13px;font-weight:700;min-width:24px;text-align:right;">'+v+'</span>'
+              + '<span style="font-size:12px;color:var(--c-tm);min-width:38px;text-align:right;">'+pct+'%</span>'
+              + '</div>';
+        });
+    }
+
+    var projRevChart = null;
+    function drawProjRevChart() {
+        var el = document.getElementById('admEmpProjRevChart');
+        if (!el) return;
+        // Use weekly project data from PERIODS
+        var p = PERIODS['weekly'];
+        var pdata = p.projects || p.labels.map(function(){ return 0; });
+        if (projRevChart) { projRevChart.destroy(); projRevChart = null; }
+        projRevChart = new Chart(el, {
+            type: 'bar',
+            data: { labels: p.labels, datasets: [{
+                label: 'Projects', data: pdata,
+                backgroundColor: 'rgba(255,152,0,0.8)', hoverBackgroundColor: '#e65100',
+                borderRadius: 5, borderSkipped: false
+            }]},
+            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: function(c) { return ' ' + c.parsed.y + ' project' + (c.parsed.y!==1?'s':''); }}}
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, maxTicksLimit: 6 }, grid: { color: '#f5f5f5' } },
+                    x: { grid: { display: false }, ticks: { maxRotation: 35, font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded',function(){
+        var selYear=document.getElementById('yearSelect');
+        if(selYear){AVAIL_YEARS.slice().reverse().forEach(function(y){var o=document.createElement('option');o.value=y;o.textContent=y;if(y===CUR_YEAR)o.selected=true;selYear.appendChild(o);});}
+        document.querySelectorAll('.rev-ptab').forEach(function(btn){
+            btn.addEventListener('click',function(){
+                activePeriod=btn.dataset.period;var ms=document.getElementById('monthSelect');
+                if(ms)ms.style.display=(activePeriod==='monthly')?'':'none';
+                activateTab(activePeriod);
+                if(activePeriod==='monthly'){drawByYearMonth();}else{drawCharts(PERIODS[activePeriod].labels,PERIODS[activePeriod].tasks,PERIODS[activePeriod].rev);}
+            });
+        });
+        drawDoughnut();drawProjDoughnut();drawProjRevChart();activateTab('weekly');drawCharts(PERIODS.weekly.labels,PERIODS.weekly.tasks,PERIODS.weekly.rev);
+    });
+})();
+</script>
+
+<!-- Chatbot -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">🤖<div id="jmDot">1</div></button>
+<div id="jmBox">
+  <div id="jmHead"><div class="av">🤖</div><div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online — Ask me anything</div></div><button id="jmX" onclick="jmOpen()" title="Close">✕</button></div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+
+  <div id="jmChips"><button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button><button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button><button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button></div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo" title="Send">&#10148;</button></div>
+</div>
+<script>
+(function(){var hist=[],open=false;
+function hhmmss(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+function bubble(txt,mine){var msgs=document.getElementById('jmMsgs');var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}var inner=document.createElement('div');var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;var t=document.createElement('div');t.className='jmT';t.textContent=hhmmss();inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;}
+function typing(show){document.getElementById('jmTyping').style.display=show?'flex':'none';}
+window.jmOpen=function(){open=!open;document.getElementById('jmBox').classList.toggle('on',open);if(open&&!document.getElementById('jmMsgs').children.length){bubble('Hi! I am the JobMate AI assistant. How can I help you today?',false);}};
+window.jmAsk=function(txt){document.getElementById('jmChips').style.display='none';document.getElementById('jmInp').value=txt;jmSend();};
+function jmSend(){var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='';document.getElementById('jmChips').style.display='none';bubble(msg,true);hist.push({role:'user',content:msg});typing(true);fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(d){typing(false);bubble(d.reply||'Sorry, no response.',false);hist.push({role:'assistant',content:d.reply||''});}).catch(function(){typing(false);bubble('Sorry, could not connect.',false);});}
+document.getElementById('jmGo').addEventListener('click',jmSend);
+document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});
+document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});
+setTimeout(function(){if(!open){var dot=document.getElementById('jmDot');if(dot)dot.style.display='flex';}},4000);
+})();
+</script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 28px;
+        right: 88px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content:''; position:absolute; inset:-4px; border-radius:50%;
+        border:2px solid rgba(144,202,249,0.45);
+        animation:stPulse 2.5s ease-in-out infinite; pointer-events:none;
+    }
+    @keyframes stPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.35);opacity:0;}}
+    </style>
+    <button id="scrollTopBtn" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+        btn.onclick=function(){
+            window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+        };
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+{% include 'pages/includes/notif_live.html' %}
+</body>
+</html>

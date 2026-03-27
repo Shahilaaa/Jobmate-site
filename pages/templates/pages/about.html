@@ -1,0 +1,280 @@
+{% extends 'pages/base.html' %}
+{% load static %}
+
+{% block title %}JobMate - About{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero { background-image: url("{% static 'assets/1.png' %}"); background-size: cover; background-position: center; }
+
+    /* ── Enquiry section ── */
+    .enquire-section { padding: 80px 0; background: #f8fafc; }
+    .enquire-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
+
+    .enquire-text h2 { font-size: 28px; font-weight: 800; color: #0d1f3c; margin: 0 0 16px; letter-spacing: -.3px; }
+    .enquire-text p  { color: #555; line-height: 1.7; margin: 0 0 14px; font-size: 15px; }
+
+    /* ── Success banner ── */
+    .enq-success {
+        background: #f0fdf4;
+        border: 2px solid #86efac;
+        border-radius: 16px;
+        padding: 36px 32px;
+        text-align: center;
+        animation: enqFadeUp .5s ease both;
+    }
+    .enq-success-ico  { font-size: 52px; margin-bottom: 14px; display: block; }
+    .enq-success h3   { font-size: 22px; font-weight: 800; color: #166534; margin: 0 0 10px; }
+    .enq-success p    { font-size: 14px; color: #15803d; line-height: 1.6; margin: 0 0 22px; }
+    .enq-success-btn  {
+        display: inline-block;
+        padding: 11px 28px;
+        background: #16a34a;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+        transition: background .15s;
+    }
+    .enq-success-btn:hover { background: #15803d; }
+
+    /* ── Error banner ── */
+    .enq-error {
+        background: #fef2f2;
+        border: 1.5px solid #fca5a5;
+        border-radius: 10px;
+        padding: 13px 16px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #991b1b;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: enqFadeUp .3s ease both;
+    }
+
+    /* ── Form ── */
+    .enquire-form { background:var(--c-white); border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 24px rgba(0,0,0,.07); border: 1px solid #e8ecf0; }
+    .enquire-form .form-group { margin-bottom: 18px; }
+    .enquire-form label { display: block; font-size: 12px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 7px; }
+    .enquire-form input,
+    .enquire-form select,
+    .enquire-form textarea {
+        width: 100%; padding: 11px 14px;
+        border: 1.5px solid #e0e4ea;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        color: #1a1a1a;
+        background: #fdfdfd;
+        outline: none;
+        transition: border-color .2s, box-shadow .2s;
+        box-sizing: border-box;
+    }
+    .enquire-form input:focus,
+    .enquire-form select:focus,
+    .enquire-form textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        background:var(--c-white);
+    }
+    .enquire-form textarea { resize: vertical; min-height: 120px; }
+
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 800;
+        font-family: inherit;
+        letter-spacing: .6px;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(29,78,216,.35);
+        transition: opacity .15s, transform .15s, box-shadow .2s;
+    }
+    .btn-submit:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 6px 22px rgba(29,78,216,.45); }
+    .btn-submit:active { transform: translateY(0); }
+
+    .enq-note { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 12px; }
+
+    @keyframes enqFadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+    @media (max-width: 860px) {
+        .enquire-grid { grid-template-columns: 1fr; gap: 32px; }
+        .enquire-form { padding: 24px 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ── -->
+<section class="hero hero-short hero-centered">
+    <div class="hero-content">
+        <h1>SMARTER WORKFORCE <br> SOLUTIONS</h1>
+    </div>
+</section>
+
+<!-- ── About Content ── -->
+<section class="about-content-section">
+    <div class="container">
+        <div class="about-grid">
+            <div class="about-text">
+                <h2>BUILT FOR SPEED, FLEXIBILITY &amp; TRUST</h2>
+                <p>JobMate is a modern service-based platform designed to simplify short-term and flexible hiring. We connect businesses with verified professionals across multiple domains — ensuring the right talent is available exactly when needed.</p>
+                <p>Whether it's a developer for a quick fix, a designer for a campaign launch, or support staff during peak hours, JobMate enables seamless hiring through structured profiles, transparent pricing, and real-time tracking.</p>
+
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">😊</div>
+                        <div class="feature-content">
+                            <h3>VERIFIED &amp; SKILLED PROFESSIONALS</h3>
+                            <p>Every professional on JobMate is carefully structured with detailed profiles highlighting skills, experience, and availability. This ensures businesses hire with clarity and confidence, reducing risk and improving productivity.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">😊</div>
+                        <div class="feature-content">
+                            <h3>FLEXIBLE HIRING OPTIONS</h3>
+                            <p>From hourly engagements to monthly contracts, JobMate offers flexible hiring models tailored to business needs. You pay only for what you need — with clear cost estimates upfront and no hidden charges.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">😊</div>
+                        <div class="feature-content">
+                            <h3>REAL-TIME TRACKING &amp; TRANSPARENCY</h3>
+                            <p>Our platform includes real-time work tracking and status updates, allowing businesses to monitor progress efficiently. Transparency and accountability are built into every step of the hiring journey.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-image">
+                <img src="{% static 'assets/image block.png' %}" alt="About JobMate">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Enquire Section — id="enquire" is the scroll target after submit ── -->
+<section class="enquire-section" id="enquire">
+    <div class="container">
+        <div class="enquire-grid">
+
+            <!-- Left: text -->
+            <div class="enquire-text">
+                <h2>ENQUIRE NOW</h2>
+                <p>Have questions or looking to hire? Connect with us today and discover how JobMate can support your business needs.</p>
+                <p>We are committed to helping businesses grow without the burden of long-term hiring complexities.</p>
+            </div>
+
+            <!-- Right: success card OR form -->
+            {% for msg in messages %}
+
+                {% if msg.tags == 'success' %}
+                <!-- ✅ SUCCESS STATE -->
+                <div class="enq-success" id="enq-result">
+                    <span class="enq-success-ico">✅</span>
+                    <h3>Enquiry Sent!</h3>
+                    <p>{{ msg }}</p>
+                    <a href="{% url 'about' %}" class="enq-success-btn">Send Another Enquiry</a>
+                </div>
+
+                {% else %}
+                <!-- ❌ ERROR STATE — show form again with error -->
+                <div>
+                    <div class="enq-error" id="enq-result">
+                        <span>⚠️</span> {{ msg }}
+                    </div>
+                    <form class="enquire-form" method="post" action="{% url 'about' %}#enquire">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input type="text" name="name" placeholder="Your full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Select Service</label>
+                            <select name="service">
+                                <option value="">Select a service</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.name }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" name="email" placeholder="Your email address" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Message *</label>
+                            <textarea name="message" placeholder="Describe your requirements…" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-submit">ENQUIRE NOW →</button>
+                        <p class="enq-note">We typically reply within 24 hours.</p>
+                    </form>
+                </div>
+                {% endif %}
+
+            {% empty %}
+            <!-- DEFAULT STATE — blank form -->
+            <form class="enquire-form" method="post" action="{% url 'about' %}#enquire">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" name="name" placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Select Service</label>
+                    <select name="service">
+                        <option value="">Select a service</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.name }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" name="email" placeholder="Your email address" required>
+                </div>
+                <div class="form-group">
+                    <label>Message *</label>
+                    <textarea name="message" placeholder="Describe your requirements…" required></textarea>
+                </div>
+                <button type="submit" class="btn-submit">ENQUIRE NOW →</button>
+                <p class="enq-note">We typically reply within 24 hours.</p>
+            </form>
+            {% endfor %}
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-scroll to #enquire anchor if it's in the URL (i.e. after redirect)
+(function () {
+    if (window.location.hash === '#enquire') {
+        var el = document.getElementById('enquire');
+        if (el) {
+            setTimeout(function () {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Further scroll to the result card if present
+                var result = document.getElementById('enq-result');
+                if (result) {
+                    setTimeout(function () {
+                        result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                }
+            }, 100);
+        }
+    }
+})();
+</script>
+{% endblock %}

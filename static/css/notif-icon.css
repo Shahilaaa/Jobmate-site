@@ -1,0 +1,143 @@
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL NOTIFICATION ICON  —  shared across every dashboard page
+   ═══════════════════════════════════════════════════════════════ */
+
+.notif-icon-wrap {
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    text-decoration: none;
+    flex-shrink:     0;
+    line-height:     1;
+}
+
+/* ── Blue circle ── */
+.notification-icon {
+    position:        relative;
+    width:           42px;
+    height:          42px;
+    background:      #2196F3;
+    border-radius:   50%;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    color:           #fff;
+    cursor:          pointer;
+    flex-shrink:     0;
+    line-height:     1;
+    text-decoration: none;
+    box-shadow:      0 2px 8px rgba(33,150,243,.32);
+    transition:      background .18s, transform .15s, box-shadow .18s;
+}
+
+.notification-icon:hover {
+    background:  #1976D2;
+    transform:   scale(1.08);
+    box-shadow:  0 4px 14px rgba(33,150,243,.42);
+}
+
+/* ── Bell — perfectly centered inside circle ── */
+.notification-icon .notif-bell {
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    width:           100%;
+    height:          100%;
+    font-size:       18px;
+    line-height:     1;
+    margin:          0;
+    padding:         0;
+}
+
+/* ── Red badge — top-right of circle ── */
+.notification-icon .notif-badge {
+    position:        absolute;
+    top:             -3px;
+    right:           -3px;
+    min-width:       18px;
+    height:          18px;
+    padding:         0 4px;
+    background:      #f44336;
+    color:           #fff;
+    font-size:       10px;
+    font-weight:     700;
+    border-radius:   9px;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    border:          2px solid #fff;
+    line-height:     1;
+    box-shadow:      0 1px 4px rgba(244,67,54,.45);
+    pointer-events:  none;
+    white-space:     nowrap;
+    transition:      transform .2s;
+}
+
+/* ── Sidebar nav notification badge ── */
+.nav-notif-badge {
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    background:      #f44336;
+    color:           #fff;
+    font-size:       10px;
+    font-weight:     700;
+    min-width:       18px;
+    height:          18px;
+    padding:         0 5px;
+    border-radius:   9px;
+    margin-left:     6px;
+    line-height:     1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROJECT STATUS CIRCLE — matches task status-icon style
+   ═══════════════════════════════════════════════════════ */
+.proj-status-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+.proj-status-circle {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+.proj-status-label {
+    font-size: 12px;
+    font-weight: 600;
+}
+/* Colors per status */
+.proj-status-circle.active         { background: #4CAF50; }
+.proj-status-label.active          { color: #2e7d32; }
+
+.proj-status-circle.assigned       { background: #2196F3; }
+.proj-status-label.assigned        { color: #1565c0; }
+
+.proj-status-circle.work_submitted { background: #FF9800; }
+.proj-status-label.work_submitted  { color: #e65100; }
+
+.proj-status-circle.completed      { background: #27ae60; }
+.proj-status-label.completed       { color: #1b5e20; }
+
+.proj-status-circle.closed         { background: #9E9E9E; }
+.proj-status-label.closed          { color: #616161; }
+
+/* ═══ NEXUS NOTIF ICON THEME ═══ */
+.emp-notif-btn, .notification-icon {
+  background: linear-gradient(135deg,#2196F3,#1565C0) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 18px rgba(33,150,243,.4) !important;
+  transition: transform .2s, box-shadow .2s !important;
+}
+.emp-notif-btn:hover, .notification-icon:hover {
+  transform: scale(1.1) rotate(-5deg) !important;
+  box-shadow: 0 10px 32px rgba(33,150,243,.55) !important;
+}

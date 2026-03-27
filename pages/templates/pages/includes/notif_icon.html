@@ -1,0 +1,9 @@
+{# ── Standard notification icon — use unread_notifications from context processor ── #}
+<a href="{% url 'notifications' %}" class="notif-icon-wrap" title="Notifications">
+    <div class="notification-icon">
+        <span class="notif-bell">🔔</span>
+        {% with cnt=unread_notifications %}
+        {% if cnt %}<span class="notif-badge">{% if cnt > 99 %}99+{% else %}{{ cnt }}{% endif %}</span>{% endif %}
+        {% endwith %}
+    </div>
+</a>

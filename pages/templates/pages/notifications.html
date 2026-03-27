@@ -1,0 +1,262 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications - JobMate</title>
+  <link rel="stylesheet" href="{% static 'css/page-notifications.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-left">
+      <button class="back-btn" onclick="history.back()">&#8592; Back</button>
+      <div>
+        <div class="page-heading">
+          🔔 Notifications
+          {% if unread_count %}<span class="count-badge" id="unreadBadge">{{ unread_count }} unread</span>{% endif %}
+        </div>
+        <div class="sub-heading">Task updates, messages and activity</div>
+      </div>
+    </div>
+
+    <!-- AJAX mark-all — no page reload, no extra history entry -->
+    <button
+      class="mark-all-btn"
+      id="markAllBtn"
+      {% if not unread_count %}disabled{% endif %}
+      onclick="markAllRead()"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Mark all as read{% if unread_count %} ({{ unread_count }}){% endif %}
+    </button>
+  </div>
+
+  <!-- NLP Search Bar -->
+  <div style="padding:12px 20px 0;">
+    <form method="get" action="" data-nlp-search="notifications" style="display:flex;position:relative;max-width:480px;">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
+      <input type="text" name="q" value="{{ q|default:'' }}"
+        class="search-input"
+        placeholder="Search notifications..."
+        style="flex:1;padding:9px 12px 9px 38px;border:1px solid var(--c-bdr);border-radius:8px;font-size:13px;outline:none;font-family:inherit;background:#f9f9f9;">
+                        <button type="submit" class="nlp-submit-btn" title="Search">🔍</button>
+    </form>
+    {% if q %}<p style="margin:6px 0 0 4px;font-size:12px;color:var(--c-tm);">Showing NLP results for "<strong>{{ q }}</strong>" — <a href="?" style="color:#1a73e8;">clear</a></p>{% endif %}
+  </div>
+
+  <!-- NLP result feedback -->
+  {% if q %}<div class="nlp-result-banner"><span>🤖 AI Search: <strong>{{ q }}</strong></span><a href="?" class="nlp-clear-btn">✕ Clear</a></div>{% endif %}
+
+  <!-- Notification list -->
+  <div class="notif-list" id="notifList">
+    {% if notifications %}
+      {% for n in notifications %}
+        <a href="{% url 'notification_read' n.pk %}"
+           class="notif-card {% if n.is_read %}read{% else %}unread{% endif %}"
+           id="notif-{{ n.pk }}">
+
+          <div class="notif-dot-wrap">
+            {% if not n.is_read %}<span class="blue-dot"></span>{% endif %}
+          </div>
+
+          <div class="notif-body">
+            <div class="notif-top">
+              <span class="notif-title">{{ n.title }}</span>
+              {% if not n.is_read %}<span class="notif-new-badge">NEW</span>{% endif %}
+            </div>
+            {% if n.message %}
+              <div class="notif-msg">{{ n.message }}</div>
+            {% endif %}
+            <div class="notif-meta">
+              <span>{{ n.created_at|date:"j M Y, g:i a" }}</span>
+              {% if n.link %}<span class="notif-link-hint">Tap to view &#8594;</span>{% endif %}
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="icon">🔔</div>
+        <p>No notifications yet</p>
+        <small>You'll see task updates, messages and activity here</small>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+// ── AJAX mark-all: no form POST, no redirect, no extra history entry ──
+function markAllRead() {
+  var btn = document.getElementById('markAllBtn');
+  if (!btn || btn.disabled) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Marking…';
+
+  fetch('{% url "notifications" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: 'action=mark_all',
+    redirect: 'manual'   // prevent browser following the redirect
+  })
+  .then(function() {
+    // Update UI instantly — no refresh needed
+    document.querySelectorAll('.notif-card.unread').forEach(function(card) {
+      card.classList.remove('unread');
+      card.classList.add('read');
+      var dot = card.querySelector('.blue-dot');
+      if (dot) dot.parentNode.removeChild(dot);
+      var badge = card.querySelector('.notif-new-badge');
+      if (badge) badge.parentNode.removeChild(badge);
+    });
+
+    // Update the header count badge
+    var hdrBadge = document.getElementById('unreadBadge');
+    if (hdrBadge) hdrBadge.parentNode.removeChild(hdrBadge);
+
+    // Update button to confirmed state
+    btn.classList.add('done');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> All read';
+    btn.disabled = true;
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Mark all as read';
+  });
+}
+</script>
+
+<!-- ══ JobMate AI Chatbot ══ -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI" style="position:fixed;">🤖<div id="jmDot" style="display:none;">1</div></button>
+<div id="jmBox">
+  <div id="jmHead">
+    <div class="av">🤖</div>
+    <div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online — Ask me anything</div></div>
+    <button id="jmX" onclick="jmOpen()" title="Close">✕</button>
+  </div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips">
+    <button class="jmC" onclick="jmAsk('How do I find an employee?')">Find employee</button>
+    <button class="jmC" onclick="jmAsk('How to request a task?')">Request task</button>
+    <button class="jmC" onclick="jmAsk('How does payment work?')">Payment</button>
+    <button class="jmC" onclick="jmAsk('How to use chat?')">Chat help</button>
+  </div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Type your question…"></textarea><button id="jmGo" title="Send">&#10148;</button></div>
+</div>
+<script>
+(function(){
+  var hist=[],open=false;
+  function ts(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function bubble(txt,mine){
+    var msgs=document.getElementById('jmMsgs');
+    var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');
+    if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}
+    var inner=document.createElement('div');
+    var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;
+    var t=document.createElement('div');t.className='jmT';t.textContent=ts();
+    inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+  }
+  function typing(show){document.getElementById('jmTyping').style.display=show?'flex':'none';if(show){var m=document.getElementById('jmMsgs');m.scrollTop=m.scrollHeight;}}
+  window.jmOpen=function(){
+    open=!open;
+    var box=document.getElementById('jmBox');box.classList.toggle('on',open);
+    var btn=document.getElementById('jmBtn');
+    btn.innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';
+    if(open&&!document.getElementById('jmMsgs').children.length){bubble('Hi! I\'m the JobMate AI assistant. Ask me anything about finding employees, tasks, payments, or chat.',false);}
+    if(open){setTimeout(function(){var i=document.getElementById('jmInp');if(i)i.focus();},200);}
+  };
+  window.jmAsk=function(txt){document.getElementById('jmChips').style.display='none';document.getElementById('jmInp').value=txt;jmSend();};
+  function jmSend(){
+    var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;
+    inp.value='';inp.style.height='';document.getElementById('jmChips').style.display='none';
+    bubble(msg,true);hist.push({role:'user',content:msg});typing(true);
+    fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})})
+    .then(function(r){if(!r.ok)throw new Error('err');return r.json();})
+    .then(function(d){typing(false);bubble(d.reply||'Sorry, no response.',false);hist.push({role:'assistant',content:d.reply||''}); })
+    .catch(function(){typing(false);bubble('Sorry, could not connect. Please try again.',false);});
+  }
+  document.getElementById('jmGo').addEventListener('click',jmSend);
+  document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});
+  document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});
+  setTimeout(function(){if(!open){var d=document.getElementById('jmDot');if(d){d.style.display='flex';}}},4000);
+})();
+</script>
+<!-- ══ End JobMate AI Chatbot ══ -->
+
+<script src="{% static 'js/nlp-search.js' %}"></script>
+
+    <!-- ══ WhatsApp-style Scroll-to-Top Button ══ -->
+    <style>
+    #scrollTopBtn {
+        position: fixed;
+        bottom: 96px;
+        right: 28px;
+        z-index: 9998;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #90CAF9;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(144,202,249,0.55);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px) scale(0.85);
+        transition: opacity 0.28s ease, visibility 0.28s ease, transform 0.28s ease, background 0.2s;
+        outline: none;
+    }
+    #scrollTopBtn.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+    #scrollTopBtn:hover {
+        background: #2196F3;
+        box-shadow: 0 6px 22px rgba(144,202,249,0.7);
+        transform: translateY(-2px) scale(1.07);
+    }
+    #scrollTopBtn:active { transform: scale(0.95); }
+    #scrollTopBtn svg {
+        width: 20px; height: 20px; fill: none;
+        stroke: #fff; stroke-width: 2.5;
+        stroke-linecap: round; stroke-linejoin: round; display: block;
+    }
+    #scrollTopBtn::after {
+        content: ''; position: absolute; inset: -4px; border-radius: 50%;
+        border: 2px solid rgba(144,202,249,0.45);
+        animation: stPulse 2.5s ease-in-out infinite; pointer-events: none;
+    }
+    @keyframes stPulse {
+        0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.35);opacity:0;}
+    }
+    </style>
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="Scroll to bottom" aria-label="Scroll to bottom">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        if(!btn)return;
+        btn.classList.add('visible');
+    })();
+    </script>
+    <!-- ══ End Scroll-to-Top ══ -->
+
+</body>
+</html>

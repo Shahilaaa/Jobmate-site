@@ -1,0 +1,306 @@
+{% load static dict_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Work — {% if task %}{{ task.title }}{% else %}Task{% endif %} - JobMate</title>
+    <link rel="stylesheet" href="{% static 'css/page-task-submit.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notif-icon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <link rel="stylesheet" href="{% static 'css/macos-compat.css' %}">
+</head>
+<body>
+<div class="dashboard-layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header"><div class="logo"><span>JOB</span>MATE</div></div>
+    <div class="user-profile">
+        <div class="user-info">
+            <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;">
+                {% if current_user_avatar_url %}<img src="{{ current_user_avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="avatar">{% else %}{{ current_user_initials }}{% endif %}
+            </div>
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+        <span class="settings-icon">⚙️</span>
+    </div>
+    <ul class="nav-menu">
+        <li><a href="{% url 'dashboard_employee_dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a></li>
+        <li><a href="{% url 'dashboard_employee_task' %}" class="active"><span class="nav-icon">📋</span> Task</a></li>
+        <li><a href="{% url 'dashboard_clients' %}"><span class="nav-icon">👥</span> Clients</a></li>
+        <li><a href="{% url 'dashboard_revenue' %}"><span class="nav-icon">💰</span> Revenue</a></li>
+        <li><a href="{% url 'employee_chat_inbox' %}"><span class="nav-icon">💬</span> Chat</a></li>
+        <li><a href="{% url 'bank_detail' %}"><span class="nav-icon">🏦</span> Bank Details</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="{% url 'dashboard_employee_profile' %}"><span class="nav-icon">👤</span> Profile</a>
+        <a href="{% url 'logout' %}" class="logout"><span class="nav-icon">🚪</span> Logout</a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+
+    <!-- Header -->
+    <div class="content-header">
+        <div>
+            <a href="{% if task %}{% url 'dashboard_task_detail_id' task.id %}{% else %}{% url 'dashboard_employee_task' %}{% endif %}" class="ts-back-link">← Back to Task</a>
+            <h1 class="page-title" style="margin-top:8px;">Submit Work</h1>
+            {% if task %}
+            <div class="ts-meta-row">
+                <span class="ts-task-name">{{ task.title }}</span>
+                <span class="ts-meta-sep">·</span>
+                <span class="ts-status-pill ts-status-{{ task.status }}">{{ task.status|capfirst }}</span>
+                <span class="ts-meta-sep">·</span>
+                <span class="ts-rate">₹{{ task.budget }}/hr</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="header-actions">{% include 'pages/includes/notif_icon.html' %}</div>
+    </div>
+
+    {% if messages %}{% for msg in messages %}
+    <div class="{% if msg.tags == 'success' %}msg-success{% else %}msg-error{% endif %} ts-alert">{{ msg }}</div>
+    {% endfor %}{% endif %}
+
+    {% if task %}
+    <div class="ts-layout">
+
+        <!-- LEFT: Submit form -->
+        <div class="ts-main">
+
+            <!-- Task info card -->
+            <div class="ts-card ts-task-card">
+                <div class="ts-task-header">
+                    <div>
+                        <div class="ts-task-title">{{ task.title }}</div>
+                        <div class="ts-task-desc">{{ task.description|truncatechars:120 }}</div>
+                    </div>
+                    {% if task.end_date %}
+                    <div class="ts-deadline-badge">📅 Due {{ task.end_date|date:"j M Y" }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Submit form -->
+            <div class="ts-card">
+                <div class="ts-card-header">
+                    <span class="ts-card-title">📝 Submit Work Update</span>
+                    <span class="ts-card-sub">Your notes are private · deliverable file is client-only</span>
+                </div>
+                <div class="ts-card-body">
+                    <form method="post" enctype="multipart/form-data" action="{% url 'dashboard_task_submit_id' task.id %}">
+                        {% csrf_token %}
+
+                        <!-- Work Notes -->
+                        <div class="ts-field">
+                            <label class="ts-label">Work Notes <span class="ts-label-sub">(visible to admin)</span></label>
+                            {{ form.note }}
+                        </div>
+
+                        <!-- Hours Worked -->
+                        <div class="ts-field">
+                            <label class="ts-label">Hours Worked</label>
+                            {{ form.hours_worked }}
+                            <!-- Live calculator -->
+                            <div id="calcBox" class="ts-calc-box" style="display:none;">
+                                <div class="ts-calc-label">Auto-calculated amount</div>
+                                <div class="ts-calc-row">
+                                    <span id="calcHours" class="ts-calc-hours">0 hrs</span>
+                                    <span class="ts-calc-op">×</span>
+                                    <span class="ts-calc-rate">₹{{ hourly_rate }}/hr</span>
+                                    <span class="ts-calc-op">=</span>
+                                    <span id="calcAmount" class="ts-calc-amount">₹0</span>
+                                </div>
+                                <div class="ts-calc-note">This amount will be billed to the client on completion.</div>
+                            </div>
+                        </div>
+
+                        <!-- Work Deliverable -->
+                        <div class="ts-field">
+                            <label class="ts-label">
+                                📁 Work Deliverable File
+                                <span class="ts-client-badge">Client Download</span>
+                            </label>
+                            <div class="ts-upload-zone">
+                                {{ form.work_file }}
+                                <p class="ts-upload-hint">Upload your completed work. Only your client can download it. Accepted: PDF, ZIP, images, docs, videos.</p>
+                            </div>
+                        </div>
+
+                        <!-- Attachment -->
+                        <div class="ts-field">
+                            <label class="ts-label">Additional Attachment <span class="ts-label-sub">(optional · internal reference)</span></label>
+                            {{ form.attachment }}
+                        </div>
+
+                        <button type="submit" class="ts-submit-btn">✓ Submit Work Update</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Submission history -->
+            {% if updates %}
+            <div class="ts-card" style="margin-top:20px;">
+                <div class="ts-card-header">
+                    <span class="ts-card-title">📋 Submission History</span>
+                    <span class="ts-update-count">{{ updates|length }} submission{{ updates|length|pluralize }}</span>
+                </div>
+                {% for upd in updates %}
+                <div class="ts-history-item {% if upd.work_file %}ts-has-file{% endif %}">
+                    <div class="ts-history-top">
+                        <div class="ts-history-badges">
+                            <span class="ts-history-num">Update #{{ forloop.revcounter }}</span>
+                            {% if upd.work_file %}<span class="ts-file-badge">📁 File Delivered</span>{% endif %}
+                        </div>
+                        <span class="ts-history-time">{{ upd.submitted_at|date:"j M Y · H:i" }}</span>
+                    </div>
+                    <p class="ts-history-note">{{ upd.note }}</p>
+                    <div class="ts-history-meta">
+                        <span class="ts-meta-chip">⏱ {{ upd.hours_worked }}h worked</span>
+                        <span class="ts-meta-chip">₹{{ hourly_rate }}/hr</span>
+                        <span class="ts-meta-chip ts-chip-green">= ₹{% widthratio upd.hours_worked 1 hourly_rate %}</span>
+                        {% if upd.work_file %}<span class="ts-meta-chip ts-chip-green">📁 File attached</span>{% endif %}
+                        {% if upd.attachment %}<a href="{{ upd.attachment.url }}" target="_blank" class="ts-meta-chip ts-chip-blue">📎 Attachment</a>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div><!-- /ts-main -->
+
+        <!-- RIGHT: Info panel -->
+        <div class="ts-side-panel">
+
+            <!-- Deadline -->
+            <div class="ts-deadline-card">
+                <div class="ts-deadline-label">📅 DEADLINE</div>
+                <div class="ts-deadline-value">{% if task.end_date %}{{ task.end_date|date:"j F Y" }}{% else %}Not set{% endif %}</div>
+            </div>
+
+            <!-- Progress -->
+            <div class="ts-panel-card">
+                <div class="ts-panel-label">Task Progress</div>
+                <div class="ts-progress-row">
+                    <span>{{ task.status|capfirst }}</span>
+                    <span class="ts-progress-pct">{% if task.status == "completed" %}100%{% elif task.status == "submitted" %}80%{% elif task.status == "in_progress" %}60%{% elif task.status == "accepted" %}30%{% else %}10%{% endif %}</span>
+                </div>
+                <div class="ts-progress-bar">
+                    <div class="ts-progress-fill" style="width:{% if task.status == 'completed' %}100{% elif task.status == 'submitted' %}80{% elif task.status == 'in_progress' %}60{% elif task.status == 'accepted' %}30{% else %}10{% endif %}%;"></div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="ts-panel-card">
+                <div class="ts-panel-label">Task Status</div>
+                <div class="ts-status-display ts-status-{{ task.status }}">{{ task.status|capfirst }}</div>
+            </div>
+
+            <!-- Client -->
+            <div class="ts-panel-card">
+                <div class="ts-panel-label">Client</div>
+                <div class="ts-client-row">
+                    <div class="ts-client-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;">
+                        {{ task.client.profile.user.first_name|first|upper|default:"C" }}
+                    </div>
+                    <div>
+                        <div class="ts-client-name">{{ task.client.profile.user.get_full_name|default:task.client.profile.user.username }}</div>
+                        <div class="ts-client-email">{{ task.client.profile.user.email|default:"" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Cost -->
+            <div class="ts-panel-card">
+                <div class="ts-panel-label">💰 Task Cost</div>
+                <div class="ts-cost-amount" id="sidebarAmount">₹{{ estimated_cost|floatformat:2 }}</div>
+                <div class="ts-cost-breakdown">{{ total_hours }}h × ₹{{ hourly_rate }}/hr</div>
+                {% if estimated_cost %}
+                <div class="ts-cost-note">✔ Payment of <strong>₹{{ estimated_cost|floatformat:2 }}</strong> will be created when client marks complete.</div>
+                {% endif %}
+            </div>
+
+            <!-- Category -->
+            {% if task.skill %}
+            <div class="ts-panel-card">
+                <div class="ts-panel-label">Category</div>
+                <span class="ts-skill-tag">{{ task.skill.name }}</span>
+            </div>
+            {% endif %}
+
+        </div><!-- /ts-side-panel -->
+    </div><!-- /ts-layout -->
+    {% else %}
+    <div class="ts-card" style="padding:40px;text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">📋</div>
+        <p style="font-size:16px;font-weight:700;color:#0D1B2A;">No task selected</p>
+        <a href="{% url 'dashboard_employee_task' %}" class="ts-submit-btn" style="display:inline-flex;margin-top:16px;width:auto;padding:10px 24px;">← Back to Tasks</a>
+    </div>
+    {% endif %}
+
+</main>
+</div>
+
+<!-- AI Chatbot -->
+<button id="jmBtn" onclick="jmOpen()" title="Chat with JobMate AI">🤖<div id="jmDot">1</div></button>
+<div id="jmBox">
+  <div id="jmHead"><div class="av">🤖</div><div class="info"><div class="t">JobMate AI</div><div class="s"><span class="dot"></span>Online</div></div><button id="jmX" onclick="jmOpen()">✕</button></div>
+  <div id="jmMsgs"></div>
+  <div id="jmTyping"><div class="jmAv">🤖</div><div class="jmDots"><span></span><span></span><span></span></div></div>
+  <div id="jmChips"><button class="jmC" onclick="jmAsk('How do I submit work?')">Submit work</button><button class="jmC" onclick="jmAsk('How to log hours?')">Log hours</button></div>
+  <div id="jmFoot"><textarea id="jmInp" rows="1" placeholder="Ask JobMate AI…"></textarea><button id="jmGo">&#10148;</button></div>
+</div>
+
+<script>
+(function(){
+  var hist=[], open=false;
+  function ts(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function bubble(txt,mine){var msgs=document.getElementById('jmMsgs');var wrap=document.createElement('div');wrap.className='jmRow'+(mine?' me':'');if(!mine){var a=document.createElement('div');a.className='jmAv';a.textContent='🤖';wrap.appendChild(a);}var inner=document.createElement('div');var b=document.createElement('div');b.className='jmBbl';b.textContent=txt;var t=document.createElement('div');t.className='jmT';t.textContent=ts();inner.appendChild(b);inner.appendChild(t);wrap.appendChild(inner);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;}
+  function typing(s){document.getElementById('jmTyping').style.display=s?'flex':'none';}
+  window.jmOpen=function(){open=!open;document.getElementById('jmBox').classList.toggle('on',open);document.getElementById('jmBtn').innerHTML=open?'<span>✕</span>':'🤖<div id="jmDot" style="position:absolute;top:0;right:0;width:16px;height:16px;border-radius:50%;background:#ff3b30;border:2px solid #fff;font-size:9px;color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;">1</div>';if(open&&!document.getElementById('jmMsgs').children.length)bubble('Hi! I can help with submitting work, logging hours, or any task questions.',false);};
+  window.jmAsk=function(txt){document.getElementById('jmInp').value=txt;jmSend();};
+  function jmSend(){var inp=document.getElementById('jmInp');var msg=inp.value.trim();if(!msg)return;inp.value='';bubble(msg,true);hist.push({role:'user',content:msg});typing(true);fetch('/chatbot/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:hist.slice(-10)})}).then(function(r){return r.json();}).then(function(d){typing(false);bubble(d.reply||'No response.',false);hist.push({role:'assistant',content:d.reply||''});}).catch(function(){typing(false);bubble('Could not connect.',false);});}
+  document.getElementById('jmGo').addEventListener('click',jmSend);
+  document.getElementById('jmInp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();jmSend();}});
+  document.getElementById('jmInp').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,80)+'px';});
+  setTimeout(function(){if(!open){var d=document.getElementById('jmDot');if(d)d.style.display='flex';}},4000);
+})();
+</script>
+
+{% include 'pages/includes/notif_live.html' %}
+
+<script>
+(function(){
+    var rate = parseFloat('{{ hourly_rate }}') || 0;
+    var inp  = document.querySelector('[name="hours_worked"]');
+    var box  = document.getElementById('calcBox');
+    var spanH = document.getElementById('calcHours');
+    var spanA = document.getElementById('calcAmount');
+    var sideA = document.getElementById('sidebarAmount');
+    if (!inp) return;
+    function update() {
+        var h = parseFloat(inp.value) || 0;
+        var amt = h * rate;
+        if (h > 0) {
+            box.style.display = 'block';
+            spanH.textContent = h + ' hr' + (h !== 1 ? 's' : '');
+            spanA.textContent = '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+        } else { box.style.display = 'none'; }
+        if (sideA) {
+            var existing = parseFloat('{{ total_hours }}') || 0;
+            var totalH = existing + h;
+            var totalAmt = totalH * rate;
+            sideA.textContent = '₹' + totalAmt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+    }
+    inp.addEventListener('input', update);
+    inp.addEventListener('change', update);
+    update();
+})();
+</script>
+</body>
+</html>

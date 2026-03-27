@@ -1,0 +1,643 @@
+{% extends 'pages/base.html' %}
+{% load static %}
+
+{% block title %}JobMate - {{ employee.profile.user.get_full_name|default:"Employee" }} Profile{% endblock %}
+{% block header_class %}light-header{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ══ NEXUS PROFILE PAGE ══ */
+:root{
+  --c-navy:#0D1B2A;--c-b8:#1565C0;--c-b5:#2196F3;--c-b4:#42A5F5;
+  --c-b3:#90CAF9;--c-b1:#E3F2FD;--c-b0:#F0F7FF;
+  --c-t1:#0D1B2A;--c-t2:#1C2E40;--c-t3:#3D5A7A;--c-tm:#6A8AAA;
+  --c-bdr:#C5D8F0;--c-surf:#EEF4FF;--c-green:#16A34A;
+  --shb:0 6px 24px rgba(33,150,243,.4);
+  --shb2:0 18px 52px rgba(33,150,243,.58);
+}
+
+/* ── Keyframes ── */
+@keyframes p-rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes p-pop{0%{opacity:0;transform:scale(.82)}70%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes p-orbit{0%{transform:rotate(0deg)translateX(90px)rotate(0deg)}100%{transform:rotate(360deg)translateX(90px)rotate(-360deg)}}
+@keyframes p-orbit2{0%{transform:rotate(180deg)translateX(130px)rotate(-180deg)}100%{transform:rotate(540deg)translateX(130px)rotate(-540deg)}}
+@keyframes p-ring{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+@keyframes p-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+@keyframes p-float2{0%,100%{transform:translateY(0)rotate(-3deg)}50%{transform:translateY(-12px)rotate(3deg)}}
+@keyframes p-scan{0%{top:0}100%{top:100%}}
+@keyframes p-3d-tilt{0%,100%{transform:perspective(600px)rotateY(0deg)}50%{transform:perspective(600px)rotateY(15deg)}}
+@keyframes p-glow{0%,100%{filter:drop-shadow(0 0 6px rgba(33,150,243,.5))}50%{filter:drop-shadow(0 0 22px rgba(33,150,243,.95))}}
+@keyframes p-particle{0%{opacity:1;transform:translateY(0)translateX(0)scale(1)}100%{opacity:0;transform:translateY(var(--py,-60px))translateX(var(--px,20px))scale(0)}}
+@keyframes p-stripe{0%{background-position:0 0}100%{background-position:40px 0}}
+@keyframes p-badge-pulse{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}50%{box-shadow:0 0 0 8px rgba(22,163,74,0)}}
+@keyframes p-count{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Page Body ── */
+body{background:#EEF4FF;font-family:'Inter','Segoe UI',sans-serif}
+
+/* ── HERO SECTION ── */
+.profile-hero{
+  position:relative;min-height:420px;overflow:hidden;
+  background:linear-gradient(135deg,#060e17 0%,#0D1B2A 35%,#0d2a5c 70%,var(--c-b8) 100%);
+  display:flex;align-items:flex-end;
+}
+
+/* Animated orb field behind hero */
+.hero-orbs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hero-orb{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(circle,rgba(33,150,243,.28) 0%,rgba(33,150,243,0) 70%);
+  animation:p-float var(--dur,6s) ease-in-out infinite;
+  animation-delay:var(--delay,0s);
+}
+.hero-orb:nth-child(1){width:350px;height:350px;left:-80px;top:-80px}
+.hero-orb:nth-child(2){width:200px;height:200px;right:10%;top:20%;--dur:8s;--delay:-3s}
+.hero-orb:nth-child(3){width:280px;height:280px;right:-60px;bottom:-40px;--dur:7s;--delay:-1s;background:radial-gradient(circle,rgba(0,180,216,.2) 0%,rgba(0,180,216,0) 70%)}
+
+/* Scan line */
+.hero-scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(33,150,243,.6),rgba(144,202,249,.8),transparent);animation:p-scan 4s linear infinite;pointer-events:none}
+
+/* Particle field */
+.hero-particles{position:absolute;inset:0;pointer-events:none}
+.hero-particle{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  background:rgba(144,202,249,.6);
+  animation:p-particle 3s ease-out infinite;
+  animation-delay:var(--d,0s);
+}
+
+/* Grid overlay */
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(33,150,243,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(33,150,243,.06) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse at 50% 50%,black 40%,transparent 80%);
+}
+
+/* 3-D floating card widget */
+.hero-3d-card{
+  position:absolute;right:60px;top:50%;transform:translateY(-50%);
+  width:200px;
+  animation:p-float 5s ease-in-out infinite,p-3d-tilt 6s ease-in-out infinite;
+  display:none;
+}
+@media(min-width:900px){.hero-3d-card{display:block}}
+.hero-card-inner{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(33,150,243,.3);
+  border-radius:20px;padding:20px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 16px 48px rgba(13,27,42,.5),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.hero-card-dot{width:8px;height:8px;border-radius:50%;background:var(--c-b4);display:inline-block;margin-right:8px;animation:p-glow 2s ease-in-out infinite}
+.hero-card-label{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1.5px}
+.hero-card-val{font-family:'Inter', 'Segoe UI', sans-serif !important;font-weight:800;color:#fff;margin:4px 0;text-shadow:0 0 20px rgba(33,150,243,.6)}
+.hero-card-bar{height:4px;background:rgba(255,255,255,.1);border-radius:99px;margin:8px 0 4px;overflow:hidden}
+.hero-card-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--c-b5),var(--c-b3));animation:p-glow 2s ease-in-out infinite}
+
+/* ── Hero Profile Container ── */
+.hero-profile-wrap{
+  position:relative;z-index:10;width:100%;
+  padding:40px 0 36px;
+}
+.hero-inner{
+  max-width:1200px;margin:0 auto;padding:0 40px;
+  display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap;
+}
+
+/* Avatar with 3D ring orbits */
+.avatar-stage{position:relative;flex-shrink:0;width:140px;height:140px}
+.avatar-ring{
+  position:absolute;inset:-14px;border-radius:50%;
+  border:1.5px solid rgba(33,150,243,.25);
+  box-shadow:0 0 28px rgba(33,150,243,.12);
+}
+.avatar-ring-2{inset:-26px;border-color:rgba(33,150,243,.12)}
+
+/* Orbit dots */
+.orbit-dot{
+  position:absolute;width:10px;height:10px;border-radius:50%;
+  background:linear-gradient(135deg,var(--c-b5),var(--c-b3));
+  top:50%;left:50%;margin:-5px;
+  box-shadow:0 0 10px rgba(33,150,243,.7);
+}
+.orbit-dot-1{animation:p-orbit 5s linear infinite}
+.orbit-dot-2{width:7px;height:7px;margin:-3.5px;background:linear-gradient(135deg,var(--c-b3),#00B4D8);animation:p-orbit2 7s linear infinite}
+
+.emp-avatar{
+  width:140px;height:140px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.5);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--c-b5),var(--c-b8));
+  font-size:52px;font-weight:800;color:#fff;
+  box-shadow:0 8px 32px rgba(13,27,42,.5),0 0 0 3px rgba(33,150,243,.3);
+  position:relative;z-index:2;
+  animation:p-pop 1s ease both;
+}
+.emp-avatar img{width:100%;height:100%;object-fit:cover}
+
+/* Pulse rings on avatar */
+.avatar-pulse{
+  position:absolute;inset:-6px;border-radius:50%;
+  border:2px solid rgba(33,150,243,.4);
+  animation:p-ring 2.5s ease-out infinite;
+}
+.avatar-pulse-2{animation-delay:.8s}
+
+/* Status indicator on avatar */
+.avatar-status{
+  position:absolute;bottom:6px;right:6px;z-index:3;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--c-green);border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(22,163,74,.4);
+  animation:p-badge-pulse 2s ease-in-out infinite;
+}
+.avatar-status.offline{background:#ef4444;animation:none}
+
+/* Hero text */
+.hero-text{flex:1;min-width:220px;animation:p-rise .8s .2s ease both}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  color:rgba(255,255,255,.55);font-size:13px;font-weight:500;
+  text-decoration:none;margin-bottom:14px;padding:6px 14px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:99px;backdrop-filter:blur(8px);
+  transition:all .2s;
+}
+.back-btn:hover{color:#fff;background:rgba(255,255,255,.15)}
+.hero-name{
+  font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:34px;font-weight:800;
+  color:#fff;letter-spacing:-1px;margin-bottom:6px;
+  text-shadow:0 2px 12px rgba(0,0,0,.4);
+}
+.hero-title{color:rgba(255,255,255,.65);font-size:15px;margin-bottom:10px;font-weight:500}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hero-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.85);backdrop-filter:blur(8px);
+}
+.hero-chip.available{background:rgba(22,163,74,.22);border-color:rgba(22,163,74,.4);color:#69f0ae}
+.hero-chip.unavailable{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.35);color:#fca5a5}
+
+/* Hero action buttons */
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;animation:p-rise .8s .4s ease both}
+.btn-chat-hero{
+  background:linear-gradient(135deg,var(--c-b5),var(--c-b8));
+  color:#fff;border:none;padding:12px 26px;border-radius:12px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  box-shadow:var(--shb);transition:all .25s;font-family:inherit;
+  display:flex;align-items:center;gap:8px;letter-spacing:.3px;
+}
+.btn-chat-hero:hover{transform:translateY(-3px) scale(1.03);box-shadow:var(--shb2)}
+.btn-request-hero{
+  background:rgba(255,255,255,.12);color:#fff;
+  border:1.5px solid rgba(255,255,255,.35);padding:12px 26px;
+  border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;
+  backdrop-filter:blur(8px);transition:all .25s;font-family:inherit;
+  display:flex;align-items:center;gap:8px;letter-spacing:.3px;
+}
+.btn-request-hero:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.55);transform:translateY(-2px)}
+
+/* ── CONTENT LAYOUT ── */
+.profile-body{max-width:1200px;margin:0 auto;padding:40px 40px;display:flex;gap:28px;align-items:flex-start}
+
+/* ── SIDEBAR NAV ── */
+.profile-sidebar-nav{
+  width:220px;flex-shrink:0;position:sticky;top:90px;
+  background:#fff;border:1px solid var(--c-bdr);border-radius:20px;
+  padding:18px 0;
+  box-shadow:0 4px 20px rgba(13,27,42,.07);
+  animation:p-rise .7s .1s ease both;
+}
+.profile-sidebar-nav ul{list-style:none;padding:0 12px}
+.profile-sidebar-nav li{margin-bottom:3px}
+.profile-sidebar-nav a{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;border-radius:12px;
+  color:var(--c-t3);text-decoration:none;font-size:13px;font-weight:600;
+  letter-spacing:.3px;transition:all .2s;
+}
+.profile-sidebar-nav a:hover,.profile-sidebar-nav a.active{
+  background:var(--c-b1);color:var(--c-b8);
+}
+.profile-sidebar-nav a .nav-bullet{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--c-bdr);flex-shrink:0;transition:background .2s;
+}
+.profile-sidebar-nav a:hover .nav-bullet,.profile-sidebar-nav a.active .nav-bullet{background:var(--c-b5)}
+
+/* ── CONTENT AREA ── */
+.profile-content-area{flex:1;min-width:0}
+
+/* Section cards */
+.profile-section{
+  background:#fff;border:1px solid var(--c-bdr);
+  border-radius:22px;padding:26px;margin-bottom:22px;
+  box-shadow:0 2px 14px rgba(13,27,42,.07),inset 0 1px 0 rgba(255,255,255,.9);
+  animation:p-rise .6s ease both;
+  position:relative;overflow:hidden;
+  transition:box-shadow .3s;
+}
+.profile-section:hover{box-shadow:0 8px 32px rgba(13,27,42,.1)}
+.profile-section::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--c-b5),var(--c-b3),#00B4D8);
+  opacity:.7;
+}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.sec-icon{
+  width:38px;height:38px;border-radius:11px;
+  background:var(--c-b1);display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0;
+  box-shadow:0 3px 10px rgba(33,150,243,.2);
+}
+.sec-title{
+  font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:14px;font-weight:700;
+  color:var(--c-t1);text-transform:uppercase;letter-spacing:.8px;
+}
+.sec-body{color:var(--c-t2);font-size:14.5px;line-height:1.75}
+
+/* Skills 3D chips */
+.skills-wrap{display:flex;flex-wrap:wrap;gap:10px}
+.skill-3d{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:12px;
+  background:linear-gradient(135deg,var(--c-b1),#dbeafc);
+  border:1px solid var(--c-bdr);color:var(--c-b8);
+  font-size:13px;font-weight:600;
+  box-shadow:0 3px 10px rgba(33,150,243,.15),inset 0 1px 0 rgba(255,255,255,.8);
+  transition:all .25s;cursor:default;
+  transform-style:preserve-3d;
+}
+.skill-3d:hover{
+  background:linear-gradient(135deg,var(--c-b5),var(--c-b8));
+  color:#fff;border-color:var(--c-b5);
+  transform:translateY(-4px) rotateX(8deg);
+  box-shadow:0 12px 24px rgba(33,150,243,.35);
+}
+.skill-dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.7}
+
+/* Portfolio item */
+.portfolio-card{
+  border:1px solid var(--c-bdr);border-radius:16px;
+  margin-bottom:16px;overflow:hidden;
+  transition:transform .3s,box-shadow .3s;
+}
+.portfolio-card:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(13,27,42,.12)}
+.portfolio-img{
+  width:100%;height:200px;object-fit:cover;
+  background:var(--c-b0);display:block;
+}
+.portfolio-body{padding:16px 20px}
+.portfolio-title-text{font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:15px;font-weight:700;color:var(--c-t1);margin-bottom:6px}
+.portfolio-desc-text{font-size:13.5px;color:var(--c-t3);line-height:1.65}
+.portfolio-meta-row{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
+.portfolio-link-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:700;color:var(--c-b5);
+  text-decoration:none;padding:5px 12px;
+  background:var(--c-b1);border-radius:8px;
+  transition:all .2s;
+}
+.portfolio-link-btn:hover{background:var(--c-b5);color:#fff}
+.portfolio-date{font-size:11.5px;color:var(--c-tm)}
+
+/* Testimonials */
+.testimonial-3d{
+  border:1px solid var(--c-bdr);border-radius:16px;padding:20px;
+  margin-bottom:14px;background:#fff;
+  position:relative;overflow:hidden;
+  transition:transform .3s,box-shadow .3s;
+}
+.testimonial-3d:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(13,27,42,.1)}
+.testimonial-3d::after{
+  content:'"';position:absolute;right:18px;top:10px;
+  font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:80px;font-weight:900;
+  color:var(--c-b1);line-height:1;pointer-events:none;
+}
+.test-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.test-name{font-family:'Inter', 'Segoe UI', sans-serif !important;font-size:14px;font-weight:800;color:var(--c-t1);text-transform:uppercase;letter-spacing:.5px}
+.test-meta{font-size:12px;color:var(--c-tm);margin-top:2px}
+.stars{color:#F59E0B;font-size:13px}
+.test-body{font-size:14px;line-height:1.7;color:var(--c-t2);font-style:italic}
+
+/* Awards grid */
+.awards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px}
+.award-3d-card{
+  border:1px solid var(--c-bdr);border-radius:16px;overflow:hidden;
+  aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--c-b0),#fff);
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .35s;
+  cursor:default;
+  position:relative;overflow:hidden;
+}
+.award-3d-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(33,150,243,.05),rgba(33,150,243,.12));
+  opacity:0;transition:opacity .3s;
+}
+.award-3d-card:hover{transform:translateY(-8px) rotateX(8deg);box-shadow:0 20px 44px rgba(13,27,42,.14)}
+.award-3d-card:hover::before{opacity:1}
+.award-3d-card img{width:100%;height:100%;object-fit:cover}
+.award-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;text-align:center}
+.award-icon{font-size:38px;animation:p-float 3s ease-in-out infinite}
+.award-title-text{font-size:12px;font-weight:700;color:var(--c-t2);line-height:1.3}
+.award-issuer{font-size:11px;color:var(--c-tm)}
+
+/* empty state */
+.empty-state{text-align:center;padding:30px;color:var(--c-tm);font-size:14px}
+.empty-state .empty-icon{font-size:36px;margin-bottom:10px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .profile-body{flex-direction:column;padding:24px 20px}
+  .profile-sidebar-nav{width:100%;position:static}
+  .profile-sidebar-nav ul{display:flex;flex-wrap:wrap;gap:6px;padding:10px}
+  .hero-inner{padding:0 20px}
+  .hero-name{font-size:26px}
+}
+@media(max-width:600px){
+  .hero-profile-wrap{padding:28px 0 24px}
+  .hero-actions{margin-top:14px}
+  .awards-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ══ -->
+<section class="profile-hero">
+  <!-- Background effects -->
+  <div class="hero-orbs">
+    <div class="hero-orb"></div>
+    <div class="hero-orb"></div>
+    <div class="hero-orb"></div>
+  </div>
+  <div class="hero-grid"></div>
+  <div class="hero-scan"></div>
+
+  <!-- Floating particles -->
+  <div class="hero-particles">
+    <div class="hero-particle" style="left:15%;top:60%;--d:0s;--px:20px;--py:-70px"></div>
+    <div class="hero-particle" style="left:30%;top:70%;--d:.8s;--px:-15px;--py:-55px"></div>
+    <div class="hero-particle" style="left:55%;top:55%;--d:1.6s;--px:25px;--py:-65px"></div>
+    <div class="hero-particle" style="left:72%;top:65%;--d:.4s;--px:-20px;--py:-75px"></div>
+    <div class="hero-particle" style="left:85%;top:50%;--d:1.2s;--px:10px;--py:-60px"></div>
+  </div>
+
+  <!-- Floating 3D stats card -->
+  <div class="hero-3d-card">
+    <div class="hero-card-inner">
+      <div style="margin-bottom:14px">
+        <div class="hero-card-label">AVAILABILITY</div>
+        <div class="hero-card-val" style="font-size:16px;margin-top:4px">
+          {% if employee.is_available %}✅ Open to Work{% else %}🔴 Unavailable{% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="hero-card-label">RATE</div>
+        <div class="hero-card-val">₹{{ employee.hourly_rate }}<span style="font-size:13px;opacity:.6">/hr</span></div>
+        <div class="hero-card-bar"><div class="hero-card-bar-fill" style="width:72%"></div></div>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)">
+        <div class="hero-card-label">DEPARTMENT</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:3px">{{ employee.department.name|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main profile info -->
+  <div class="hero-profile-wrap">
+    <div class="hero-inner">
+      <!-- Avatar -->
+      <div class="avatar-stage">
+        <div class="avatar-ring"></div>
+        <div class="avatar-ring avatar-ring-2"></div>
+        <div class="orbit-dot orbit-dot-1"></div>
+        <div class="orbit-dot orbit-dot-2"></div>
+        <div class="emp-avatar">
+          {% if employee and employee.profile_image %}
+            <img src="{{ employee.profile_image.url }}" alt="Profile photo">
+          {% else %}
+            {{ employee.profile.user.first_name|first|upper|default:"E" }}
+          {% endif %}
+        </div>
+        <div class="avatar-pulse"></div>
+        <div class="avatar-pulse avatar-pulse-2"></div>
+        <div class="avatar-status {% if not employee.is_available %}offline{% endif %}"></div>
+      </div>
+
+      <!-- Text + meta -->
+      <div style="flex:1">
+        <a href="{{ back_url }}" class="back-btn">← Back</a>
+        <h1 class="hero-name">{{ employee.profile.user.get_full_name|default:employee.profile.user.username }}</h1>
+        <p class="hero-title">{{ employee.title|default:"Professional" }}{% if employee.department %} · {{ employee.department.name }}{% endif %}</p>
+        <div class="hero-meta">
+          {% if employee.skill %}<span class="hero-chip">🛠 {{ employee.skill.name }}</span>{% endif %}
+          <span class="hero-chip">₹{{ employee.hourly_rate }}/hr</span>
+          {% if employee.is_available %}
+            <span class="hero-chip available">● Available</span>
+          {% else %}
+            <span class="hero-chip unavailable">● Unavailable</span>
+          {% endif %}
+        </div>
+        <div style="height:18px"></div>
+        <div class="hero-actions">
+          <button class="btn-chat-hero" onclick="window.location.href='{% url 'chat_with_employee' employee.id %}'">
+            💬 Chat Now
+          </button>
+          <button class="btn-request-hero" onclick="window.location.href='{% url 'task' %}?employee={{ employee.id }}'">
+            📋 Request Task
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ BODY ══ -->
+<div class="profile-body">
+
+  <!-- Sidebar Nav -->
+  <nav class="profile-sidebar-nav">
+    <ul>
+      <li><a href="#about"><span class="nav-bullet"></span> About</a></li>
+      <li><a href="#skills"><span class="nav-bullet"></span> Skills</a></li>
+      <li><a href="#portfolio"><span class="nav-bullet"></span> Portfolio</a></li>
+      <li><a href="#testimonials"><span class="nav-bullet"></span> Testimonials</a></li>
+      <li><a href="#awards"><span class="nav-bullet"></span> Awards</a></li>
+    </ul>
+  </nav>
+
+  <!-- Content -->
+  <div class="profile-content-area">
+
+    <!-- ABOUT -->
+    <section id="about" class="profile-section" style="animation-delay:.05s">
+      <div class="sec-head">
+        <div class="sec-icon">👤</div>
+        <h2 class="sec-title">About</h2>
+      </div>
+      <div class="sec-body">
+        {{ employee.bio|default:"This professional hasn't added a bio yet. Check back soon!" }}
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills" class="profile-section" style="animation-delay:.12s">
+      <div class="sec-head">
+        <div class="sec-icon">⚡</div>
+        <h2 class="sec-title">Skills</h2>
+      </div>
+      <div class="skills-wrap">
+        {% if employee.skill %}
+          <div class="skill-3d"><span class="skill-dot"></span>{{ employee.skill.name }}</div>
+        {% endif %}
+        {% if employee.department %}
+          <div class="skill-3d"><span class="skill-dot"></span>{{ employee.department.name }}</div>
+        {% endif %}
+        {% if employee.title %}
+          <div class="skill-3d"><span class="skill-dot"></span>{{ employee.title }}</div>
+        {% endif %}
+        {% if not employee.skill and not employee.department %}
+          <p class="empty-state"><span class="empty-icon">🛠</span><br>Skills not listed yet</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- PORTFOLIO -->
+    <section id="portfolio" class="profile-section" style="animation-delay:.19s">
+      <div class="sec-head">
+        <div class="sec-icon">🎨</div>
+        <h2 class="sec-title">Portfolio</h2>
+      </div>
+      {% if portfolio_items %}
+        {% for item in portfolio_items %}
+        <div class="portfolio-card">
+          {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="portfolio-img">
+          {% endif %}
+          <div class="portfolio-body">
+            <div class="portfolio-title-text">{{ item.title|upper }}</div>
+            {% if item.description %}
+              <p class="portfolio-desc-text">{{ item.description }}</p>
+            {% endif %}
+            <div class="portfolio-meta-row">
+              {% if item.link %}
+                <a href="{{ item.link }}" target="_blank" rel="noopener" class="portfolio-link-btn">🔗 View Project</a>
+              {% endif %}
+              {% if item.date %}
+                <span class="portfolio-date">{{ item.date|date:"j M, Y" }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🎨</div>
+          No portfolio items added yet.
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section id="testimonials" class="profile-section" style="animation-delay:.26s">
+      <div class="sec-head">
+        <div class="sec-icon">💬</div>
+        <h2 class="sec-title">Testimonials</h2>
+      </div>
+      {% if testimonials %}
+        {% for t in testimonials %}
+        <div class="testimonial-3d">
+          <div class="test-header">
+            <div>
+              <div class="test-name">{{ t.author_name|upper }}</div>
+              <div class="test-meta">
+                {{ t.date|date:"j M, Y" }}
+                {% if t.author_title %} · {{ t.author_title }}{% endif %}
+              </div>
+            </div>
+            {% if t.rating %}
+            <div class="stars">
+              {% for i in "12345" %}{% if forloop.counter <= t.rating %}★{% else %}☆{% endif %}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <p class="test-body">{{ t.text }}</p>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">💬</div>
+          No testimonials yet.
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- AWARDS -->
+    <section id="awards" class="profile-section" style="animation-delay:.33s">
+      <div class="sec-head">
+        <div class="sec-icon">🏆</div>
+        <h2 class="sec-title">Accreditations &amp; Awards</h2>
+      </div>
+      {% if accreditations %}
+      <div class="awards-grid">
+        {% for a in accreditations %}
+        <div class="award-3d-card">
+          {% if a.image %}
+            <img src="{{ a.image.url }}" alt="{{ a.title }}">
+          {% else %}
+            <div class="award-placeholder">
+              <div class="award-icon">🏆</div>
+              <div class="award-title-text">{{ a.title }}</div>
+              {% if a.issuer %}<div class="award-issuer">{{ a.issuer }}</div>{% endif %}
+              {% if a.date_issued %}<div class="award-issuer">{{ a.date_issued|date:"j M, Y" }}</div>{% endif %}
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🏆</div>
+          No accreditations added yet.
+        </div>
+      {% endif %}
+    </section>
+
+  </div><!-- /profile-content-area -->
+</div><!-- /profile-body -->
+
+<script>
+/* Smooth scroll for sidebar nav */
+document.querySelectorAll('.profile-sidebar-nav a').forEach(function(a){
+  a.addEventListener('click',function(e){
+    var href=this.getAttribute('href');
+    if(href&&href.startsWith('#')){
+      e.preventDefault();
+      var el=document.querySelector(href);
+      if(el){el.scrollIntoView({behavior:'smooth',block:'start'})}
+    }
+  });
+});
+/* Active highlight */
+var sections=document.querySelectorAll('.profile-section[id]');
+var links=document.querySelectorAll('.profile-sidebar-nav a');
+window.addEventListener('scroll',function(){
+  var scrollY=window.scrollY+120;
+  sections.forEach(function(s){
+    if(s.offsetTop<=scrollY&&s.offsetTop+s.offsetHeight>scrollY){
+      links.forEach(function(l){l.classList.remove('active')});
+      var match=document.querySelector('.profile-sidebar-nav a[href="#'+s.id+'"]');
+      if(match)match.classList.add('active');
+    }
+  });
+});
+</script>
+{% endblock %}

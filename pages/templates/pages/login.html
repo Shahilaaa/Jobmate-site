@@ -1,0 +1,53 @@
+{% extends 'pages/base.html' %}
+{% load static %}
+
+{% block title %}JobMate - Login{% endblock %}
+{% block body_class %}login-body{% endblock %}
+
+{% block content %}
+<!-- Main Content -->
+    <div class="login-wrapper">
+        <!-- Left Side - Image -->
+        <div class="login-image" style="background-image:url('{% static 'assets/page content.png' %}');background-size:cover;background-position:center;">
+        </div>
+
+        <!-- Right Side - Login Form -->
+        <div class="login-form-section">
+            <div class="page-logo"><span class="logo-job">JOB</span><span class="logo-mate">MATE</span></div>
+
+            <h1 class="login-title">LOGIN</h1>
+            <p class="login-description">Sign in to your JobMate account to hire professionals, manage tasks, and track your projects.</p>
+
+            <form class="login-form" method="post">
+                {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                {% if form.errors %}
+                <div style="margin-bottom:14px; color:#b00020; font-size:13px;">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="username">User name</label>
+                    <input type="email" id="username" name="email" placeholder="name@mycompany.com" value="{{ request.POST.email }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <span class="lock-icon">🔒</span>
+                        <input type="password" id="password" name="password" placeholder="Password" required>
+                        <a href="#" class="forgot-password">Forgot password</a>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login-submit">LOGIN</button>
+
+                <p class="register-link">
+                    You dont habe an account <a href="{% url 'register' %}">Register Now</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Floating Chat Icon -->
+{% endblock %}
